@@ -1,0 +1,3614 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Subword Neural Dynamics (SND) • AI Laboratory & Vector Space Studio</title>
+  <style>
+    /* ==========================================================================
+       AI Laboratory Design System - Modern Dark Aesthetic
+       ========================================================================== */
+    :root {
+      --bg-darker: #080B11;
+      --bg-dark: #0D111A;
+      --bg-card: rgba(18, 24, 38, 0.75);
+      --bg-card-hover: rgba(26, 35, 54, 0.85);
+      --bg-input: #0B0F17;
+      --border-subtle: rgba(255, 255, 255, 0.08);
+      --border-glow: rgba(6, 182, 212, 0.3);
+      --border-active: #06B6D4;
+      
+      --primary: #06B6D4;          /* Electric Cyan */
+      --primary-glow: rgba(6, 182, 212, 0.25);
+      --secondary: #8B5CF6;        /* Neural Violet */
+      --secondary-glow: rgba(139, 92, 246, 0.25);
+      --accent: #F59E0B;           /* Quantum Amber */
+      --accent-glow: rgba(245, 158, 11, 0.25);
+      --success: #10B981;          /* Emerald */
+      --pink: #EC4899;             /* Vibrant Pink */
+      --danger: #EF4444;           /* Rose */
+
+      --text-main: #F3F4F6;
+      --text-muted: #9CA3AF;
+      --text-dim: #6B7280;
+      
+      --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      --font-mono: 'JetBrains Mono', 'Fira Code', Menlo, Monaco, Consolas, 'Courier New', monospace;
+
+      --radius-sm: 6px;
+      --radius-md: 10px;
+      --radius-lg: 16px;
+      --radius-full: 9999px;
+      
+      --shadow-card: 0 4px 20px -2px rgba(0, 0, 0, 0.5), 0 0 0 1px var(--border-subtle);
+      --shadow-glow: 0 0 25px -5px var(--primary-glow);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-darker);
+      color: var(--text-main);
+      font-family: var(--font-sans);
+      font-size: 14px;
+      line-height: 1.5;
+      min-height: 100vh;
+      overflow-x: hidden;
+      background-image: 
+        radial-gradient(circle at 15% 10%, rgba(6, 182, 212, 0.07) 0%, transparent 40%),
+        radial-gradient(circle at 85% 85%, rgba(139, 92, 246, 0.07) 0%, transparent 40%),
+        linear-gradient(to bottom, #080B11, #0A0E17);
+    }
+
+    /* Scrollbars */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: var(--bg-dark);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.15);
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(255, 255, 255, 0.25);
+    }
+
+    /* Header & Navigation */
+    .app-header {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      background: rgba(13, 17, 26, 0.85);
+      border-bottom: 1px solid var(--border-subtle);
+      padding: 12px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .brand-section {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-logo {
+      width: 36px;
+      height: 36px;
+      border-radius: var(--radius-md);
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 15px var(--primary-glow);
+    }
+
+    .brand-logo svg {
+      width: 20px;
+      height: 20px;
+      fill: #fff;
+    }
+
+    .brand-text h1 {
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      background: linear-gradient(90deg, #FFFFFF, #9CA3AF);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .brand-badge {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      padding: 2px 6px;
+      background: rgba(6, 182, 212, 0.15);
+      color: var(--primary);
+      border: 1px solid rgba(6, 182, 212, 0.3);
+      border-radius: var(--radius-full);
+    }
+
+    .nav-tabs {
+      display: flex;
+      gap: 6px;
+      background: rgba(0, 0, 0, 0.35);
+      padding: 4px;
+      border-radius: var(--radius-full);
+      border: 1px solid var(--border-subtle);
+    }
+
+    .nav-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      font-size: 13px;
+      font-weight: 500;
+      padding: 6px 14px;
+      border-radius: var(--radius-full);
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .nav-btn:hover {
+      color: var(--text-main);
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .nav-btn.active {
+      background: var(--primary);
+      color: #000;
+      font-weight: 600;
+      box-shadow: 0 0 12px var(--primary-glow);
+    }
+
+    .header-status {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .status-pill {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      color: var(--text-muted);
+      font-family: var(--font-mono);
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--success);
+      box-shadow: 0 0 8px var(--success);
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(0.95); opacity: 0.8; }
+      50% { transform: scale(1.15); opacity: 1; }
+      100% { transform: scale(0.95); opacity: 0.8; }
+    }
+
+    /* Layout & Grid */
+    .main-container {
+      max-width: 1440px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+
+    .tab-pane {
+      display: none;
+      animation: fadeIn 0.25s ease-out;
+    }
+
+    .tab-pane.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+    }
+
+    .grid-4 {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+    }
+
+    /* Cards & Panels */
+    .card {
+      background: var(--bg-card);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      padding: 20px;
+      box-shadow: var(--shadow-card);
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card:hover {
+      border-color: rgba(255, 255, 255, 0.14);
+    }
+
+    .card.highlight {
+      border-color: var(--border-glow);
+      box-shadow: 0 0 25px -8px var(--primary-glow);
+    }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+
+    .card-title {
+      font-size: 15px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: #FFF;
+    }
+
+    .card-subtitle {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    .card-badge {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: var(--radius-full);
+      background: rgba(255, 255, 255, 0.06);
+      color: var(--text-muted);
+      border: 1px solid var(--border-subtle);
+    }
+
+    /* Metric Cards */
+    .metric-card {
+      background: rgba(0, 0, 0, 0.35);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 14px;
+    }
+
+    .metric-label {
+      font-size: 11px;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+    }
+
+    .metric-value {
+      font-family: var(--font-mono);
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--text-main);
+      margin-top: 4px;
+    }
+
+    .metric-sub {
+      font-size: 11px;
+      color: var(--text-dim);
+      margin-top: 2px;
+    }
+
+    /* Inputs & Sliders */
+    textarea, input[type="text"] {
+      width: 100%;
+      background: var(--bg-input);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      color: var(--text-main);
+      font-family: var(--font-mono);
+      font-size: 13px;
+      padding: 10px 14px;
+      transition: all 0.2s ease;
+      outline: none;
+    }
+
+    textarea:focus, input[type="text"]:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 10px var(--primary-glow);
+    }
+
+    textarea {
+      resize: vertical;
+      line-height: 1.6;
+    }
+
+    .slider-container {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin: 12px 0;
+    }
+
+    input[type="range"] {
+      flex: 1;
+      -webkit-appearance: none;
+      background: rgba(255, 255, 255, 0.1);
+      height: 6px;
+      border-radius: 3px;
+      outline: none;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: var(--primary);
+      cursor: pointer;
+      box-shadow: 0 0 8px var(--primary-glow);
+      transition: transform 0.15s ease;
+    }
+
+    input[type="range"]::-webkit-slider-thumb:hover {
+      transform: scale(1.2);
+    }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      padding: 8px 16px;
+      border-radius: var(--radius-md);
+      border: 1px solid transparent;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      user-select: none;
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: #000;
+      box-shadow: 0 0 15px var(--primary-glow);
+    }
+
+    .btn-primary:hover {
+      background: #22d3ee;
+      transform: translateY(-1px);
+    }
+
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--text-main);
+      border-color: var(--border-subtle);
+    }
+
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.12);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    .btn-outline-cyan {
+      background: transparent;
+      color: var(--primary);
+      border-color: rgba(6, 182, 212, 0.4);
+    }
+
+    .btn-outline-cyan:hover {
+      background: rgba(6, 182, 212, 0.1);
+    }
+
+    .btn-sm {
+      padding: 4px 10px;
+      font-size: 12px;
+    }
+
+    .btn-group {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    /* Quick Pills */
+    .quick-pills {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin-top: 8px;
+    }
+
+    .pill-sample {
+      font-size: 11px;
+      padding: 3px 8px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-full);
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .pill-sample:hover {
+      color: var(--primary);
+      border-color: var(--primary);
+      background: rgba(6, 182, 212, 0.08);
+    }
+
+    /* Token Chips */
+    .token-stream-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      padding: 12px;
+      background: var(--bg-input);
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-subtle);
+      min-height: 52px;
+      align-items: center;
+    }
+
+    .token-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 3px 8px;
+      border-radius: var(--radius-sm);
+      font-family: var(--font-mono);
+      font-size: 12px;
+      font-weight: 500;
+      transition: transform 0.15s ease;
+    }
+
+    .token-chip:hover {
+      transform: translateY(-1px);
+    }
+
+    .token-chip .token-id {
+      font-size: 9px;
+      opacity: 0.65;
+      margin-left: 2px;
+    }
+
+    .token-chip.type-word {
+      background: rgba(16, 185, 129, 0.15);
+      color: #34D399;
+      border: 1px solid rgba(16, 185, 129, 0.35);
+    }
+
+    .token-chip.type-subword {
+      background: rgba(139, 92, 246, 0.15);
+      color: #A78BFA;
+      border: 1px solid rgba(139, 92, 246, 0.35);
+    }
+
+    .token-chip.type-unknown {
+      background: rgba(239, 68, 68, 0.15);
+      color: #F87171;
+      border: 1px solid rgba(239, 68, 68, 0.35);
+    }
+
+    .token-chip.type-special {
+      background: rgba(99, 102, 241, 0.15);
+      color: #818CF8;
+      border: 1px solid rgba(99, 102, 241, 0.35);
+    }
+
+    .token-legend {
+      display: flex;
+      gap: 16px;
+      margin-top: 10px;
+      flex-wrap: wrap;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .legend-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 3px;
+    }
+
+    /* Subword Splits */
+    .split-cards-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .split-card {
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 8px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .split-orig-word {
+      font-size: 11px;
+      color: var(--text-muted);
+      font-family: var(--font-mono);
+    }
+
+    .split-tokens-row {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .split-arrow {
+      color: var(--text-dim);
+      font-size: 10px;
+    }
+
+    /* Active Vocabulary Inspector Table */
+    .vocab-table-container {
+      overflow-y: auto;
+      max-height: 380px;
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+    }
+
+    .vocab-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+      text-align: left;
+    }
+
+    .vocab-table th {
+      position: sticky;
+      top: 0;
+      background: #111726;
+      padding: 10px 14px;
+      color: var(--text-muted);
+      font-weight: 600;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .vocab-table td {
+      padding: 8px 14px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      font-family: var(--font-mono);
+    }
+
+    .vocab-table tr:hover td {
+      background: rgba(255, 255, 255, 0.03);
+    }
+
+    .status-badge {
+      font-size: 10px;
+      padding: 2px 6px;
+      border-radius: var(--radius-full);
+    }
+
+    .badge-special { background: rgba(99, 102, 241, 0.2); color: #818CF8; }
+    .badge-base { background: rgba(6, 182, 212, 0.2); color: #22D3EE; }
+    .badge-subword { background: rgba(139, 92, 246, 0.2); color: #A78BFA; }
+    .badge-word { background: rgba(16, 185, 129, 0.2); color: #34D399; }
+
+    /* Gram Matrix & Heatmap */
+    .gram-matrix-container {
+      overflow-x: auto;
+      padding: 12px;
+      background: rgba(0, 0, 0, 0.4);
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-subtle);
+    }
+
+    .gram-table {
+      border-collapse: collapse;
+      font-family: var(--font-mono);
+      font-size: 10px;
+    }
+
+    .gram-cell {
+      width: 32px;
+      height: 32px;
+      text-align: center;
+      vertical-align: middle;
+      border: 1px solid rgba(0, 0, 0, 0.4);
+      cursor: pointer;
+      transition: transform 0.15s ease, filter 0.15s ease;
+      user-select: none;
+    }
+
+    .gram-cell:hover {
+      transform: scale(1.15);
+      filter: brightness(1.3);
+      z-index: 10;
+      box-shadow: 0 0 10px rgba(6, 182, 212, 0.6);
+    }
+
+    .gram-header-cell {
+      padding: 4px;
+      color: var(--text-dim);
+      font-size: 9px;
+      max-width: 80px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* Vector 64D Grid */
+    .vector-grid-64 {
+      display: grid;
+      grid-template-columns: repeat(8, 1fr);
+      gap: 6px;
+      padding: 12px;
+      background: var(--bg-input);
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-subtle);
+      max-height: 240px;
+      overflow-y: auto;
+    }
+
+    .vector-dim-cell {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: var(--radius-sm);
+      padding: 4px 6px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .dim-idx {
+      color: var(--text-dim);
+      font-size: 9px;
+    }
+
+    .dim-val {
+      color: var(--text-main);
+      font-weight: 500;
+    }
+
+    /* 3D Viewport */
+    .canvas-viewport-wrapper {
+      position: relative;
+      width: 100%;
+      height: 520px;
+      background: radial-gradient(circle at center, #111726 0%, #090D15 100%);
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-subtle);
+      overflow: hidden;
+    }
+
+    #pca-canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    .viewport-controls-bar {
+      position: absolute;
+      top: 14px;
+      left: 14px;
+      right: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      pointer-events: none;
+    }
+
+    .viewport-controls-bar > * {
+      pointer-events: auto;
+    }
+
+    .cluster-legend-overlay {
+      position: absolute;
+      bottom: 14px;
+      left: 14px;
+      background: rgba(13, 17, 26, 0.85);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 10px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .cluster-checkbox-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 11px;
+      cursor: pointer;
+      color: var(--text-muted);
+    }
+
+    .cluster-checkbox-row:hover {
+      color: var(--text-main);
+    }
+
+    .cluster-color-badge {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+    }
+
+    .hover-tooltip {
+      position: absolute;
+      display: none;
+      background: rgba(17, 24, 38, 0.95);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid var(--border-glow);
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.7);
+      border-radius: var(--radius-md);
+      padding: 10px 14px;
+      font-size: 12px;
+      pointer-events: none;
+      z-index: 50;
+      max-width: 320px;
+      transform: translate(-50%, -120%);
+      transition: opacity 0.15s ease;
+    }
+
+    .tooltip-title {
+      font-weight: 600;
+      color: #FFF;
+      margin-bottom: 4px;
+    }
+
+    .tooltip-cluster {
+      font-size: 10px;
+      font-family: var(--font-mono);
+      color: var(--primary);
+      margin-bottom: 6px;
+    }
+
+    .tooltip-coords {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--text-muted);
+    }
+
+    /* Neighbor Cards */
+    .neighbor-card {
+      background: rgba(0, 0, 0, 0.35);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 14px;
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      transition: border-color 0.2s ease, transform 0.2s ease;
+    }
+
+    .neighbor-card:hover {
+      border-color: rgba(6, 182, 212, 0.4);
+      transform: translateY(-2px);
+    }
+
+    .rank-badge {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: rgba(6, 182, 212, 0.15);
+      color: var(--primary);
+      border: 1px solid rgba(6, 182, 212, 0.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      flex-shrink: 0;
+    }
+
+    .sim-score-meter {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      flex-shrink: 0;
+    }
+
+    .sim-percentage {
+      font-family: var(--font-mono);
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--primary);
+    }
+
+    .sim-bar-bg {
+      width: 80px;
+      height: 4px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 2px;
+      margin-top: 4px;
+      overflow: hidden;
+    }
+
+    .sim-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--primary), var(--secondary));
+      border-radius: 2px;
+    }
+
+    /* Self-Test Panel */
+    .test-suite-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px;
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-subtle);
+      margin-bottom: 16px;
+    }
+
+    .test-item-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 14px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      font-size: 13px;
+    }
+
+    .test-item-row:hover {
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .test-name {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-family: var(--font-mono);
+      font-size: 12px;
+    }
+
+    .test-status-pill {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: var(--radius-full);
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .test-status-pill.passed {
+      background: rgba(16, 185, 129, 0.15);
+      color: #34D399;
+      border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+
+    .test-status-pill.failed {
+      background: rgba(239, 68, 68, 0.15);
+      color: #F87171;
+      border: 1px solid rgba(239, 68, 68, 0.3);
+    }
+
+    @media (max-width: 1024px) {
+      .grid-2, .grid-3 { grid-template-columns: 1fr; }
+      .grid-4 { grid-template-columns: 1fr 1fr; }
+      .app-header { flex-direction: column; gap: 12px; align-items: flex-start; }
+      .nav-tabs { overflow-x: auto; width: 100%; }
+    }
+
+    @media (max-width: 640px) {
+      .grid-4 { grid-template-columns: 1fr; }
+      .canvas-viewport-wrapper { height: 380px; }
+      .main-container { padding: 14px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ======================================================================
+       Header & Navigation
+       ====================================================================== -->
+  <header class="app-header">
+    <div class="brand-section">
+      <div class="brand-logo">
+        <svg viewBox="0 0 24 24">
+          <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+        </svg>
+      </div>
+      <div class="brand-text">
+        <h1>SND AI Laboratory</h1>
+        <div class="card-subtitle">WordPiece Tokenizer & 64D Latent Space Studio</div>
+      </div>
+      <span class="brand-badge">v2.5.0 • STANDALONE</span>
+    </div>
+
+    <nav class="nav-tabs" role="tablist">
+      <button class="nav-btn active" data-tab="tab-overview">Overview</button>
+      <button class="nav-btn" data-tab="tab-tokenizer">Tokenizer & Vocab</button>
+      <button class="nav-btn" data-tab="tab-embeddings">64D Embeddings & Gram</button>
+      <button class="nav-btn" data-tab="tab-visualizer">3D PCA & Playground</button>
+      <button class="nav-btn" data-tab="tab-comparison">Nearest Pairs</button>
+      <button class="nav-btn" data-tab="tab-selftest">Self-Test Suite</button>
+    </nav>
+
+    <div class="header-status">
+      <div class="status-pill">
+        <span class="status-dot"></span>
+        <span id="engine-status">ENGINE READY</span>
+      </div>
+      <div class="status-pill">
+        <span>LATENT DIM:</span>
+        <strong style="color:var(--primary)">64D</strong>
+      </div>
+    </div>
+  </header>
+
+  <!-- ======================================================================
+       Main Content Container
+       ====================================================================== -->
+  <main class="main-container">
+
+    <!-- ====================================================================
+         TAB 1: Overview
+         ==================================================================== -->
+    <section id="tab-overview" class="tab-pane active">
+      <div class="grid-4" style="margin-bottom: 24px;">
+        <div class="card metric-card">
+          <div class="metric-label">Active Vocabulary</div>
+          <div class="metric-value" id="stat-vocab-size">80</div>
+          <div class="metric-sub">WordPiece subwords & tokens</div>
+        </div>
+        <div class="card metric-card">
+          <div class="metric-label">Corpus Sentences</div>
+          <div class="metric-value" id="stat-sentence-count">20</div>
+          <div class="metric-sub">5 Thematic domain clusters</div>
+        </div>
+        <div class="card metric-card">
+          <div class="metric-label">Embedding Dimensions</div>
+          <div class="metric-value" style="color:var(--primary);">64-D</div>
+          <div class="metric-sub">L2 Normalized unit vectors</div>
+        </div>
+        <div class="card metric-card">
+          <div class="metric-label">PCA Explained Variance</div>
+          <div class="metric-value" id="stat-pca-variance" style="color:var(--success);">78.4%</div>
+          <div class="metric-sub">Across PC1, PC2 & PC3</div>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="card highlight">
+          <div class="card-header">
+            <div>
+              <div class="card-title">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+                  <polyline points="2 17 12 22 22 17"></polyline>
+                  <polyline points="2 12 12 17 22 12"></polyline>
+                </svg>
+                Subword Neural Architecture Pipeline
+              </div>
+              <div class="card-subtitle">Real mathematical transformation from raw string to 3D manifold</div>
+            </div>
+            <span class="card-badge">LIVE FLOW</span>
+          </div>
+
+          <div style="display:flex; flex-direction:column; gap:12px; margin-top:8px;">
+            <div style="background:rgba(0,0,0,0.3); border:1px solid var(--border-subtle); border-radius:var(--radius-md); padding:12px;">
+              <div style="display:flex; justify-content:space-between; align-items:center;">
+                <strong style="color:var(--primary); font-size:12px;">1. WordPiece Tokenization</strong>
+                <span class="card-badge">Subword ## notation</span>
+              </div>
+              <p style="font-size:12px; color:var(--text-muted); margin-top:4px;">
+                Greedy longest-match-first segmentation with iterative pair-merge likelihood: 
+                <code>Score(A, B) = freq(AB) / (freq(A) × freq(B))</code>.
+              </p>
+            </div>
+
+            <div style="background:rgba(0,0,0,0.3); border:1px solid var(--border-subtle); border-radius:var(--radius-md); padding:12px;">
+              <div style="display:flex; justify-content:space-between; align-items:center;">
+                <strong style="color:var(--secondary); font-size:12px;">2. 64-Dimensional Dense Embeddings</strong>
+                <span class="card-badge">L2 Normalized</span>
+              </div>
+              <p style="font-size:12px; color:var(--text-muted); margin-top:4px;">
+                Subword semantic projections combined with positional harmonic encoding: 
+                <code>v = Σ w_i e_i / ||Σ w_i e_i||_2</code>.
+              </p>
+            </div>
+
+            <div style="background:rgba(0,0,0,0.3); border:1px solid var(--border-subtle); border-radius:var(--radius-md); padding:12px;">
+              <div style="display:flex; justify-content:space-between; align-items:center;">
+                <strong style="color:var(--accent); font-size:12px;">3. Gram Matrix & Similarity Engine</strong>
+                <span class="card-badge">Exact Inner Products</span>
+              </div>
+              <p style="font-size:12px; color:var(--text-muted); margin-top:4px;">
+                Pairwise inner products producing the symmetric Gram matrix: 
+                <code>G_ij = v_i · v_j = cos(θ_ij)</code>.
+              </p>
+            </div>
+
+            <div style="background:rgba(0,0,0,0.3); border:1px solid var(--border-subtle); border-radius:var(--radius-md); padding:12px;">
+              <div style="display:flex; justify-content:space-between; align-items:center;">
+                <strong style="color:var(--success); font-size:12px;">4. 3D Principal Component Analysis (PCA)</strong>
+                <span class="card-badge">Eigen Decomposition</span>
+              </div>
+              <p style="font-size:12px; color:var(--text-muted); margin-top:4px;">
+                Power iteration with Hotelling deflation extracting orthonormal eigenvectors PC1, PC2, PC3.
+              </p>
+            </div>
+          </div>
+
+          <div style="margin-top:20px; display:flex; gap:10px;">
+            <button class="btn btn-primary" onclick="window.app.switchTab('tab-tokenizer')">Launch Tokenizer</button>
+            <button class="btn btn-secondary" onclick="window.app.switchTab('tab-visualizer')">Explore 3D Space</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">Quick Playground Launch</div>
+              <div class="card-subtitle">Real-time vector query test directly into latent space</div>
+            </div>
+            <span class="card-badge">INTERACTIVE</span>
+          </div>
+
+          <div style="display:flex; flex-direction:column; gap:12px;">
+            <label style="font-size:12px; color:var(--text-muted);">Enter a test sentence:</label>
+            <input type="text" id="overview-quick-input" value="transformers compute neural attention mechanisms">
+            
+            <div class="quick-pills">
+              <span class="pill-sample" onclick="window.app.setQuickInput('deep learning models optimize loss functions')">AI: loss optimization</span>
+              <span class="pill-sample" onclick="window.app.setQuickInput('astronomy reveals distant cosmic galaxies')">Space: cosmic galaxies</span>
+              <span class="pill-sample" onclick="window.app.setQuickInput('quantum superposition entangles atomic qubits')">Quantum: atomic qubits</span>
+              <span class="pill-sample" onclick="window.app.setQuickInput('cortical synapses support cognitive memory')">Mind: cognitive memory</span>
+            </div>
+
+            <div style="display:flex; gap:10px; margin-top:8px;">
+              <button class="btn btn-primary" id="btn-overview-query">Tokenize & Project</button>
+              <button class="btn btn-secondary" onclick="window.app.switchTab('tab-selftest')">Run Diagnostics</button>
+            </div>
+
+            <div id="overview-query-result" style="margin-top:10px; display:none; background:rgba(0,0,0,0.3); padding:12px; border-radius:var(--radius-md); border:1px solid var(--border-glow);">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                <strong style="color:var(--accent); font-size:12px;">★ Top Nearest Match:</strong>
+                <span id="overview-match-score" style="font-family:var(--font-mono); color:var(--primary); font-weight:700;"></span>
+              </div>
+              <div id="overview-match-text" style="font-size:13px; color:#FFF; font-family:var(--font-mono);"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ====================================================================
+         TAB 2: Tokenizer Studio & Vocabulary
+         ==================================================================== -->
+    <section id="tab-tokenizer" class="tab-pane">
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">Training Corpus</div>
+              <div class="card-subtitle">Editable corpus used to train the WordPiece subword vocabulary</div>
+            </div>
+            <div class="btn-group">
+              <button class="btn btn-secondary btn-sm" id="btn-reset-corpus">Reset Corpus</button>
+            </div>
+          </div>
+
+          <textarea id="corpus-textarea" rows="11" placeholder="Enter corpus text..."></textarea>
+
+          <div style="margin-top: 14px;">
+            <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:4px;">
+              <span style="color:var(--text-muted);">Dynamic Target Vocabulary Size:</span>
+              <strong id="vocab-size-val" style="color:var(--primary); font-family:var(--font-mono);">80</strong>
+            </div>
+            <div class="slider-container">
+              <span style="font-size:11px; color:var(--text-dim); font-family:var(--font-mono);">30</span>
+              <input type="range" id="vocab-size-slider" min="30" max="220" value="80" step="5">
+              <span style="font-size:11px; color:var(--text-dim); font-family:var(--font-mono);">220</span>
+            </div>
+          </div>
+
+          <div style="display:flex; gap:10px; margin-top:12px;">
+            <button class="btn btn-primary" id="btn-train-vocab">Train Vocabulary</button>
+            <button class="btn btn-outline-cyan" id="btn-run-tokenizer">Run Tokenizer</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">Live Tokenizer Input</div>
+              <div class="card-subtitle">Real-time subword tokenization and unknown detection</div>
+            </div>
+            <span class="card-badge" id="token-status-badge">READY</span>
+          </div>
+
+          <div>
+            <input type="text" id="live-test-input" value="transformers utilize neural attention mechanisms" placeholder="Type text to tokenize in real-time...">
+            
+            <div class="quick-pills">
+              <span class="pill-sample" onclick="window.app.setLiveInput('transformers utilize neural attention mechanisms')">Sample: Transformers</span>
+              <span class="pill-sample" onclick="window.app.setLiveInput('quantum entanglement enables instantaneous state transfer')">Sample: Quantum</span>
+              <span class="pill-sample" onclick="window.app.setLiveInput('astronomers observe distant spiral galaxies')">Sample: Galaxy</span>
+              <span class="pill-sample" onclick="window.app.setLiveInput('unpredictable biological metamorphoses and xenobiology')">Sample: Subwords & Rare</span>
+              <span class="pill-sample" onclick="window.app.setLiveInput('testing foreign runes: Ωmega and Ψ-wave [UNK]')">Sample: Unknown [UNK]</span>
+            </div>
+          </div>
+
+          <div style="margin-top: 16px;">
+            <div style="font-size:12px; font-weight:600; color:var(--text-muted); text-transform:uppercase; margin-bottom:8px;">Live Tokenization Analytics</div>
+            <div class="grid-3" style="gap:10px;">
+              <div class="metric-card" style="padding:10px;">
+                <div class="metric-label">Raw Characters</div>
+                <div class="metric-value" id="stat-raw-chars" style="font-size:20px;">49</div>
+              </div>
+              <div class="metric-card" style="padding:10px;">
+                <div class="metric-label">Emitted Tokens</div>
+                <div class="metric-value" id="stat-emitted-tokens" style="font-size:20px; color:var(--primary);">8</div>
+              </div>
+              <div class="metric-card" style="padding:10px;">
+                <div class="metric-label">Compression Ratio</div>
+                <div class="metric-value" id="stat-compression" style="font-size:20px; color:var(--success);">6.12</div>
+              </div>
+            </div>
+          </div>
+
+          <div style="margin-top: 16px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+              <span style="font-size:12px; font-weight:600; color:var(--text-muted); text-transform:uppercase;">Tokenized Stream:</span>
+              <span id="unknown-alert" style="display:none; color:var(--danger); font-size:11px; font-family:var(--font-mono);">⚠ Out-of-Vocabulary Tokens Present</span>
+            </div>
+            <div class="token-stream-container" id="token-stream-chips"></div>
+
+            <div class="token-legend">
+              <div class="legend-item">
+                <span class="legend-dot" style="background:#34D399;"></span>
+                <span>Whole Word</span>
+              </div>
+              <div class="legend-item">
+                <span class="legend-dot" style="background:#A78BFA;"></span>
+                <span>Subword (##)</span>
+              </div>
+              <div class="legend-item">
+                <span class="legend-dot" style="background:#F87171;"></span>
+                <span>Unknown ([UNK])</span>
+              </div>
+              <div class="legend-item">
+                <span class="legend-dot" style="background:#818CF8;"></span>
+                <span>Special Token</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid-2" style="margin-top: 20px;">
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">Subword Splits Decomposition</div>
+              <div class="card-subtitle">Visual breakdown showing how words are dissected into subwords</div>
+            </div>
+            <span class="card-badge" id="split-count-badge">0 Words</span>
+          </div>
+
+          <div class="split-cards-container" id="subword-splits-container"></div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">Active Vocabulary Inspector</div>
+              <div class="card-subtitle">Inspect active token IDs, frequencies and subword status</div>
+            </div>
+            <input type="text" id="vocab-search" placeholder="Search vocab tokens..." style="width:180px; padding:4px 8px; font-size:11px;">
+          </div>
+
+          <div class="vocab-table-container">
+            <table class="vocab-table">
+              <thead>
+                <tr>
+                  <th style="width:60px;">ID</th>
+                  <th>Token String</th>
+                  <th style="width:90px;">Corpus Freq</th>
+                  <th style="width:110px;">Classification</th>
+                </tr>
+              </thead>
+              <tbody id="vocab-table-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ====================================================================
+         TAB 3: 64D Vector Embeddings & Gram Matrix
+         ==================================================================== -->
+    <section id="tab-embeddings" class="tab-pane">
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">64-Dimensional Vector Inspector</div>
+              <div class="card-subtitle">Inspect real computed float values for any corpus sentence</div>
+            </div>
+            <select id="sentence-select-vector" style="background:var(--bg-input); color:#FFF; border:1px solid var(--border-subtle); border-radius:var(--radius-sm); padding:4px 8px; font-family:var(--font-mono); font-size:11px; outline:none; max-width:220px;"></select>
+          </div>
+
+          <div id="selected-sentence-text" style="font-size:13px; color:#FFF; font-family:var(--font-mono); margin-bottom:12px; background:rgba(0,0,0,0.3); padding:8px 12px; border-radius:var(--radius-sm); border:1px solid var(--border-subtle);"></div>
+
+          <div class="grid-4" style="gap:8px; margin-bottom:12px;">
+            <div class="metric-card" style="padding:8px;">
+              <div class="metric-label" style="font-size:9px;">L2 Norm</div>
+              <div class="metric-value" id="vec-stat-norm" style="font-size:15px; color:var(--success);">1.0000</div>
+            </div>
+            <div class="metric-card" style="padding:8px;">
+              <div class="metric-label" style="font-size:9px;">Min Value</div>
+              <div class="metric-value" id="vec-stat-min" style="font-size:15px; color:var(--text-muted);">-0.2412</div>
+            </div>
+            <div class="metric-card" style="padding:8px;">
+              <div class="metric-label" style="font-size:9px;">Max Value</div>
+              <div class="metric-value" id="vec-stat-max" style="font-size:15px; color:var(--text-muted);">+0.3129</div>
+            </div>
+            <div class="metric-card" style="padding:8px;">
+              <div class="metric-label" style="font-size:9px;">Dimensions</div>
+              <div class="metric-value" style="font-size:15px; color:var(--primary);">64 / 64</div>
+            </div>
+          </div>
+
+          <div style="font-size:11px; color:var(--text-dim); margin-bottom:6px; font-family:var(--font-mono);">
+            Dense Representation (Index 0 to 63):
+          </div>
+          <div class="vector-grid-64" id="vector-dimensions-grid"></div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">Pairwise Cosine Similarity</div>
+              <div class="card-subtitle">Compute exact geometric alignment: cos(θ) = (u · v) / (||u|| ||v||)</div>
+            </div>
+            <span class="card-badge">EXACT MATH</span>
+          </div>
+
+          <div style="display:flex; flex-direction:column; gap:12px;">
+            <div>
+              <label style="font-size:11px; color:var(--text-muted);">Sentence A:</label>
+              <select id="cosine-select-a" style="width:100%; margin-top:4px; background:var(--bg-input); color:#FFF; border:1px solid var(--border-subtle); border-radius:var(--radius-sm); padding:6px 10px; font-size:12px; font-family:var(--font-mono); outline:none;"></select>
+            </div>
+
+            <div>
+              <label style="font-size:11px; color:var(--text-muted);">Sentence B:</label>
+              <select id="cosine-select-b" style="width:100%; margin-top:4px; background:var(--bg-input); color:#FFF; border:1px solid var(--border-subtle); border-radius:var(--radius-sm); padding:6px 10px; font-size:12px; font-family:var(--font-mono); outline:none;"></select>
+            </div>
+
+            <div style="background:rgba(0,0,0,0.35); border:1px solid var(--border-subtle); border-radius:var(--radius-md); padding:16px; margin-top:8px;">
+              <div style="display:flex; justify-content:space-between; align-items:center;">
+                <span style="font-size:12px; color:var(--text-muted);">Cosine Similarity Score:</span>
+                <span id="cosine-score-number" style="font-family:var(--font-mono); font-size:24px; font-weight:700; color:var(--primary);">0.8924</span>
+              </div>
+              <div class="sim-bar-bg" style="width:100%; height:8px; margin-top:8px;">
+                <div class="sim-bar-fill" id="cosine-score-bar" style="width:89.2%;"></div>
+              </div>
+              <div style="display:flex; justify-content:space-between; margin-top:8px; font-size:11px; color:var(--text-dim);">
+                <span>Orthogonal (0.00)</span>
+                <span id="cosine-cluster-alignment" style="color:var(--success); font-weight:600;">Same Cluster Alignment</span>
+                <span>Identical (1.00)</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top: 20px;">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Gram Matrix (G = X Xᵀ)</div>
+            <div class="card-subtitle">Pairwise inner products of all corpus sentences. Hover any cell to view exact score.</div>
+          </div>
+          <div style="display:flex; align-items:center; gap:8px; font-size:11px; color:var(--text-muted);">
+            <span>Scale:</span>
+            <div style="width:80px; height:10px; border-radius:2px; background:linear-gradient(90deg, #0D1B2A, #06B6D4);"></div>
+            <span>[0.0 → 1.0]</span>
+          </div>
+        </div>
+
+        <div class="gram-matrix-container" id="gram-matrix-heatmap"></div>
+      </div>
+    </section>
+
+    <!-- ====================================================================
+         TAB 4: 3D PCA Visualization & Vector Space Query Playground
+         ==================================================================== -->
+    <section id="tab-visualizer" class="tab-pane">
+      <div class="grid-2" style="grid-template-columns: 2fr 1fr;">
+        <div class="card" style="padding:0; overflow:hidden;">
+          <div class="canvas-viewport-wrapper">
+            <canvas id="pca-canvas"></canvas>
+
+            <div class="viewport-controls-bar">
+              <div style="display:flex; gap:8px;">
+                <button class="btn btn-secondary btn-sm" id="btn-toggle-projection-mode">Mode: 3D Space</button>
+                <button class="btn btn-secondary btn-sm" id="btn-reset-camera">Reset Camera</button>
+              </div>
+              <div class="status-pill" style="background:rgba(0,0,0,0.6); padding:4px 10px; border-radius:var(--radius-full); border:1px solid var(--border-subtle);">
+                <span style="color:var(--text-muted); font-size:11px;">Orbit: Drag to Rotate • Scroll to Zoom</span>
+              </div>
+            </div>
+
+            <div class="cluster-legend-overlay">
+              <div style="font-size:10px; font-weight:700; text-transform:uppercase; color:var(--text-dim); margin-bottom:2px;">Thematic Clusters</div>
+              <label class="cluster-checkbox-row">
+                <input type="checkbox" checked data-cluster="AI & Machine Learning">
+                <span class="cluster-color-badge" style="background:#06B6D4;"></span>
+                <span>AI & Machine Learning</span>
+              </label>
+              <label class="cluster-checkbox-row">
+                <input type="checkbox" checked data-cluster="Astronomy & Space">
+                <span class="cluster-color-badge" style="background:#8B5CF6;"></span>
+                <span>Astronomy & Space</span>
+              </label>
+              <label class="cluster-checkbox-row">
+                <input type="checkbox" checked data-cluster="Neuroscience & Mind">
+                <span class="cluster-color-badge" style="background:#10B981;"></span>
+                <span>Neuroscience & Mind</span>
+              </label>
+              <label class="cluster-checkbox-row">
+                <input type="checkbox" checked data-cluster="Quantum Physics">
+                <span class="cluster-color-badge" style="background:#F59E0B;"></span>
+                <span>Quantum Physics</span>
+              </label>
+              <label class="cluster-checkbox-row">
+                <input type="checkbox" checked data-cluster="Daily Life & Culture">
+                <span class="cluster-color-badge" style="background:#EC4899;"></span>
+                <span>Daily Life & Culture</span>
+              </label>
+            </div>
+
+            <div class="hover-tooltip" id="canvas-tooltip">
+              <div class="tooltip-title" id="tooltip-text">Sentence text</div>
+              <div class="tooltip-cluster" id="tooltip-cluster">Cluster</div>
+              <div class="tooltip-coords" id="tooltip-coords">Coords: (0.00, 0.00, 0.00)</div>
+            </div>
+          </div>
+
+          <div style="padding:12px 18px; display:flex; justify-content:space-between; align-items:center; background:rgba(0,0,0,0.4); border-top:1px solid var(--border-subtle);">
+            <div style="display:flex; gap:16px; font-size:11px; font-family:var(--font-mono);">
+              <span style="color:#06B6D4;">PC1: <strong id="pca-pc1-var">42.1%</strong></span>
+              <span style="color:#10B981;">PC2: <strong id="pca-pc2-var">22.8%</strong></span>
+              <span style="color:#8B5CF6;">PC3: <strong id="pca-pc3-var">13.5%</strong></span>
+              <span style="color:var(--text-dim);">Total: <strong id="pca-total-var">78.4%</strong></span>
+            </div>
+            <div style="font-size:11px; color:var(--text-dim);">
+              Hardware Accelerated Canvas 3D
+            </div>
+          </div>
+        </div>
+
+        <div class="card highlight">
+          <div class="card-header">
+            <div>
+              <div class="card-title">Query Playground</div>
+              <div class="card-subtitle">Project query into 3D space & find nearest neighbors</div>
+            </div>
+            <span class="card-badge" style="background:rgba(245, 158, 11, 0.2); color:#FDE047;">★ BEACON</span>
+          </div>
+
+          <div style="display:flex; flex-direction:column; gap:12px;">
+            <label style="font-size:12px; color:var(--text-muted);">Enter query sentence:</label>
+            <input type="text" id="playground-query-input" value="artificial neural networks learn features" placeholder="Enter query sentence...">
+
+            <div class="quick-pills">
+              <span class="pill-sample" onclick="window.app.setPlaygroundInput('deep neural networks train parameters')">AI: train parameters</span>
+              <span class="pill-sample" onclick="window.app.setPlaygroundInput('telescope captures cosmic light from galaxies')">Space: cosmic light</span>
+              <span class="pill-sample" onclick="window.app.setPlaygroundInput('quantum particles collapse wavefunctions')">Quantum: wavefunctions</span>
+              <span class="pill-sample" onclick="window.app.setPlaygroundInput('human brain stores sensory perception')">Mind: brain perception</span>
+            </div>
+
+            <div style="display:flex; gap:8px; margin-top:4px;">
+              <button class="btn btn-primary" id="btn-run-query" style="flex:1;">Tokenize & Project</button>
+              <button class="btn btn-secondary" id="btn-clear-query">Clear Query</button>
+            </div>
+
+            <div style="margin-top:10px;">
+              <div style="font-size:11px; font-weight:700; text-transform:uppercase; color:var(--text-muted); margin-bottom:8px;">
+                Top 3 Nearest Neighbors in Latent Space:
+              </div>
+
+              <div id="playground-nearest-list" style="display:flex; flex-direction:column; gap:8px;"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ====================================================================
+         TAB 5: Nearest Sentence Comparison
+         ==================================================================== -->
+    <section id="tab-comparison" class="tab-pane">
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Top 5 Nearest Sentence Pairs</div>
+            <div class="card-subtitle">Exhaustive pairwise cosine similarity analysis across all sentences in the corpus</div>
+          </div>
+          <span class="card-badge">RANKED BY SIMILARITY</span>
+        </div>
+
+        <div id="top-nearest-pairs-container" style="display:flex; flex-direction:column; gap:12px; margin-top:8px;"></div>
+      </div>
+    </section>
+
+    <!-- ====================================================================
+         TAB 6: Self-Test Suite
+         ==================================================================== -->
+    <section id="tab-selftest" class="tab-pane">
+      <div class="card">
+        <div class="test-suite-header">
+          <div>
+            <div class="card-title" style="font-size:16px;">Automated Diagnostic & Verification Suite</div>
+            <div class="card-subtitle">Verifies WordPiece Tokenizer, Subwords, 64D Embeddings, Cosine Similarity, Gram Matrix & PCA</div>
+          </div>
+          <button class="btn btn-primary" id="btn-run-selftest">Run All Self-Tests</button>
+        </div>
+
+        <div class="grid-4" style="gap:12px; margin-bottom:16px;">
+          <div class="metric-card">
+            <div class="metric-label">Total Assertions</div>
+            <div class="metric-value" id="test-stat-total">12</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">Passed</div>
+            <div class="metric-value" id="test-stat-passed" style="color:var(--success);">12</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">Failed</div>
+            <div class="metric-value" id="test-stat-failed" style="color:var(--danger);">0</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">Execution Time</div>
+            <div class="metric-value" id="test-stat-time" style="font-size:18px;">2.4 ms</div>
+          </div>
+        </div>
+
+        <div style="border:1px solid var(--border-subtle); border-radius:var(--radius-md); overflow:hidden;">
+          <div id="test-results-list"></div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ======================================================================
+       Combined Core Algorithms & Application Script
+       ====================================================================== -->
+  <script>
+    /* ====================================================================
+       1. WordPiece Tokenizer Implementation
+       ==================================================================== */
+    const SPECIAL_TOKENS = ['[PAD]', '[UNK]', '[CLS]', '[SEP]', '[MASK]'];
+
+    class WordPieceTokenizer {
+      constructor(options = {}) {
+        this.specialTokens = options.specialTokens || [...SPECIAL_TOKENS];
+        this.unkToken = options.unkToken || '[UNK]';
+        this.clsToken = options.clsToken || '[CLS]';
+        this.sepToken = options.sepToken || '[SEP]';
+        this.padToken = options.padToken || '[PAD]';
+        this.maxVocabSize = options.maxVocabSize || 100;
+        this.vocab = new Map();
+        this.idToToken = new Map();
+        this.tokenFrequencies = new Map();
+        this.tokenTypes = new Map();
+        this.isTrained = false;
+      }
+
+      normalize(text) {
+        if (!text) return '';
+        return text
+          .toLowerCase()
+          .replace(/([.,!?;:()[\]{}"'`~@#$%^&*+=<>\\/|-])/g, ' $1 ')
+          .replace(/\s+/g, ' ')
+          .trim();
+      }
+
+      preTokenize(text) {
+        const normalized = this.normalize(text);
+        if (!normalized) return [];
+        return normalized.split(' ').filter(w => w.length > 0);
+      }
+
+      train(corpusText, targetVocabSize = this.maxVocabSize) {
+        this.maxVocabSize = Math.max(20, targetVocabSize);
+        this.vocab.clear();
+        this.idToToken.clear();
+        this.tokenFrequencies.clear();
+        this.tokenTypes.clear();
+
+        let nextId = 0;
+
+        for (const token of this.specialTokens) {
+          this.vocab.set(token, nextId);
+          this.idToToken.set(nextId, token);
+          this.tokenFrequencies.set(token, 0);
+          this.tokenTypes.set(token, 'special');
+          nextId++;
+        }
+
+        const words = this.preTokenize(corpusText);
+        const wordCounts = new Map();
+        for (const word of words) {
+          wordCounts.set(word, (wordCounts.get(word) || 0) + 1);
+        }
+
+        const wordSplits = new Map();
+        const subwordCounts = new Map();
+
+        for (const [word, count] of wordCounts.entries()) {
+          const chars = Array.from(word);
+          if (chars.length === 0) continue;
+
+          const splits = [];
+          for (let i = 0; i < chars.length; i++) {
+            const piece = i === 0 ? chars[i] : `##${chars[i]}`;
+            splits.push(piece);
+            subwordCounts.set(piece, (subwordCounts.get(piece) || 0) + count);
+          }
+          wordSplits.set(word, splits);
+        }
+
+        for (const [token, count] of subwordCounts.entries()) {
+          if (!this.vocab.has(token)) {
+            this.vocab.set(token, nextId);
+            this.idToToken.set(nextId, token);
+            this.tokenFrequencies.set(token, count);
+            this.tokenTypes.set(token, token.startsWith('##') ? 'subword' : 'base');
+            nextId++;
+          }
+        }
+
+        while (this.vocab.size < this.maxVocabSize) {
+          const pairCounts = new Map();
+
+          for (const [word, count] of wordCounts.entries()) {
+            const splits = wordSplits.get(word);
+            if (!splits || splits.length < 2) continue;
+
+            for (let i = 0; i < splits.length - 1; i++) {
+              const pairKey = `${splits[i]}|||${splits[i + 1]}`;
+              pairCounts.set(pairKey, (pairCounts.get(pairKey) || 0) + count);
+            }
+          }
+
+          if (pairCounts.size === 0) break;
+
+          let bestPair = null;
+          let bestScore = -1;
+          let bestMergedToken = null;
+
+          for (const [pairKey, pairCount] of pairCounts.entries()) {
+            const [first, second] = pairKey.split('|||');
+            const countFirst = subwordCounts.get(first) || 1;
+            const countSecond = subwordCounts.get(second) || 1;
+            const score = pairCount / (countFirst * countSecond);
+
+            const cleanSecond = second.startsWith('##') ? second.slice(2) : second;
+            const mergedToken = first.startsWith('##')
+              ? `##${first.slice(2)}${cleanSecond}`
+              : `${first}${cleanSecond}`;
+
+            if (score > bestScore && !this.vocab.has(mergedToken)) {
+              bestScore = score;
+              bestPair = [first, second];
+              bestMergedToken = mergedToken;
+            }
+          }
+
+          if (!bestPair || !bestMergedToken) break;
+
+          this.vocab.set(bestMergedToken, nextId);
+          this.idToToken.set(nextId, bestMergedToken);
+          const pairFreq = pairCounts.get(`${bestPair[0]}|||${bestPair[1]}`) || 1;
+          this.tokenFrequencies.set(bestMergedToken, pairFreq);
+          this.tokenTypes.set(bestMergedToken, bestMergedToken.startsWith('##') ? 'subword' : 'word');
+          subwordCounts.set(bestMergedToken, pairFreq);
+          nextId++;
+
+          for (const [word] of wordCounts.entries()) {
+            const splits = wordSplits.get(word);
+            if (!splits || splits.length < 2) continue;
+
+            const newSplits = [];
+            let i = 0;
+            while (i < splits.length) {
+              if (
+                i < splits.length - 1 &&
+                splits[i] === bestPair[0] &&
+                splits[i + 1] === bestPair[1]
+              ) {
+                newSplits.push(bestMergedToken);
+                i += 2;
+              } else {
+                newSplits.push(splits[i]);
+                i++;
+              }
+            }
+            wordSplits.set(word, newSplits);
+          }
+        }
+
+        this.isTrained = true;
+        return this.getVocabList();
+      }
+
+      tokenizeWord(word) {
+        if (!word) return [];
+        if (this.vocab.has(word)) {
+          return [{
+            token: word,
+            id: this.vocab.get(word),
+            type: this.tokenTypes.get(word) || 'word',
+            isSubword: false,
+            isUnknown: false
+          }];
+        }
+
+        const tokens = [];
+        let start = 0;
+        let isBad = false;
+        const chars = Array.from(word);
+
+        while (start < chars.length) {
+          let end = chars.length;
+          let curSubstr = null;
+
+          while (start < end) {
+            let substr = chars.slice(start, end).join('');
+            if (start > 0) substr = `##${substr}`;
+
+            if (this.vocab.has(substr)) {
+              curSubstr = substr;
+              break;
+            }
+            end--;
+          }
+
+          if (curSubstr === null) {
+            isBad = true;
+            break;
+          }
+
+          const isSubwordPiece = curSubstr.startsWith('##') || start > 0;
+          tokens.push({
+            token: curSubstr,
+            id: this.vocab.get(curSubstr),
+            type: isSubwordPiece ? 'subword' : 'word',
+            isSubword: isSubwordPiece,
+            isUnknown: false
+          });
+          start = end;
+        }
+
+        if (isBad) {
+          return [{
+            token: this.unkToken,
+            id: this.vocab.get(this.unkToken) || 1,
+            type: 'special',
+            isSubword: false,
+            isUnknown: true,
+            originalWord: word
+          }];
+        }
+
+        return tokens;
+      }
+
+      tokenize(text, addSpecialTokens = false) {
+        const normalized = this.normalize(text);
+        if (!normalized) {
+          return {
+            tokens: [],
+            tokenIds: [],
+            wordSplits: [],
+            stats: {
+              rawCharCount: 0,
+              emittedTokenCount: 0,
+              compressionRatio: 0,
+              wholeWordCount: 0,
+              subwordCount: 0,
+              unknownCount: 0
+            }
+          };
+        }
+
+        const words = normalized.split(' ').filter(w => w.length > 0);
+        const allTokens = [];
+        const wordSplits = [];
+
+        if (addSpecialTokens) {
+          allTokens.push({
+            token: this.clsToken,
+            id: this.vocab.get(this.clsToken) ?? 2,
+            type: 'special',
+            isSubword: false,
+            isUnknown: false
+          });
+        }
+
+        for (const word of words) {
+          const subtokens = this.tokenizeWord(word);
+          wordSplits.push({
+            word,
+            tokens: subtokens.map(t => t.token),
+            isUnknown: subtokens.some(t => t.isUnknown),
+            hasSubwords: subtokens.length > 1
+          });
+          for (const t of subtokens) allTokens.push(t);
+        }
+
+        if (addSpecialTokens) {
+          allTokens.push({
+            token: this.sepToken,
+            id: this.vocab.get(this.sepToken) ?? 3,
+            type: 'special',
+            isSubword: false,
+            isUnknown: false
+          });
+        }
+
+        const rawCharCount = text.length;
+        const emittedTokenCount = allTokens.length;
+        const compressionRatio = emittedTokenCount > 0
+          ? Number((rawCharCount / emittedTokenCount).toFixed(2))
+          : 0;
+
+        let wholeWordCount = 0;
+        let subwordCount = 0;
+        let unknownCount = 0;
+
+        for (const t of allTokens) {
+          if (t.isUnknown) unknownCount++;
+          else if (t.isSubword) subwordCount++;
+          else if (t.type === 'word' || t.type === 'base') wholeWordCount++;
+        }
+
+        return {
+          tokens: allTokens,
+          tokenIds: allTokens.map(t => t.id),
+          wordSplits,
+          stats: {
+            rawCharCount,
+            emittedTokenCount,
+            compressionRatio,
+            wholeWordCount,
+            subwordCount,
+            unknownCount
+          }
+        };
+      }
+
+      getVocabList() {
+        const list = [];
+        for (const [token, id] of this.vocab.entries()) {
+          list.push({
+            id,
+            token,
+            frequency: this.tokenFrequencies.get(token) || 0,
+            type: this.tokenTypes.get(token) || 'subword',
+            status: this.tokenTypes.get(token) === 'special'
+              ? 'Special Token'
+              : this.tokenTypes.get(token) === 'base'
+              ? 'Base Alphabet'
+              : token.startsWith('##')
+              ? 'Subword Suffix'
+              : 'Merged Word'
+          });
+        }
+        return list.sort((a, b) => a.id - b.id);
+      }
+    }
+
+    /* ====================================================================
+       2. 64-Dimensional Vector Embedding & Similarity Engine
+       ==================================================================== */
+    const EMBEDDING_DIM = 64;
+
+    function seededHash(str, seed = 0) {
+      let h1 = 0xdeadbeef ^ seed;
+      let h2 = 0x41c6ce57 ^ seed;
+      for (let i = 0; i < str.length; i++) {
+        const ch = str.charCodeAt(i);
+        h1 = Math.imul(h1 ^ ch, 2654435761);
+        h2 = Math.imul(h2 ^ ch, 1597334677);
+      }
+      h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909);
+      h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);
+      return (4294967296 * (2097151 & h2) + (h1 >>> 0)) / 4294967296;
+    }
+
+    const THEME_ANCHORS = {
+      'ai': ['neural', 'model', 'learning', 'deep', 'transformer', 'algorithm', 'weights', 'gradient', 'attention', 'data', 'intelligence', 'artificial', 'network', 'loss', 'training', 'optimizer'],
+      'space': ['galaxy', 'stars', 'cosmos', 'orbit', 'planet', 'telescope', 'astronomy', 'gravity', 'solar', 'nebula', 'universe', 'blackhole', 'lightyear', 'spacetime'],
+      'neuro': ['brain', 'synapse', 'cortex', 'cognitive', 'neuron', 'memory', 'perception', 'mind', 'axon', 'dendrite', 'plasticity', 'consciousness'],
+      'quantum': ['entanglement', 'qubit', 'superposition', 'wave', 'particle', 'spin', 'uncertainty', 'planck', 'atomic', 'mechanics', 'schrodinger', 'state'],
+      'social': ['coffee', 'morning', 'conversation', 'friend', 'walking', 'park', 'reading', 'sunshine', 'music', 'weekend', 'breakfast', 'laughter']
+    };
+
+    class EmbeddingEngine {
+      constructor(dimension = EMBEDDING_DIM) {
+        this.dimension = dimension;
+        this.tokenCache = new Map();
+        this.themeVectors = this.initializeThemeVectors();
+      }
+
+      initializeThemeVectors() {
+        const vectors = {};
+        let seed = 1337;
+        for (const [theme, keywords] of Object.entries(THEME_ANCHORS)) {
+          const vec = new Float64Array(this.dimension);
+          for (let d = 0; d < this.dimension; d++) {
+            vec[d] = Math.sin((d + 1) * seed) * Math.cos(d * 0.73);
+          }
+          vectors[theme] = this.normalize(vec);
+          seed += 4242;
+        }
+        return vectors;
+      }
+
+      getTokenVector(token, tokenId = 0) {
+        if (this.tokenCache.has(token)) return this.tokenCache.get(token);
+
+        const vec = new Float64Array(this.dimension);
+        const cleanToken = token.startsWith('##') ? token.slice(2) : token;
+
+        for (let d = 0; d < this.dimension; d++) {
+          const h = seededHash(cleanToken, d * 7919 + tokenId * 31);
+          vec[d] = (h * 2.0) - 1.0;
+        }
+
+        for (const [theme, keywords] of Object.entries(THEME_ANCHORS)) {
+          for (const kw of keywords) {
+            if (cleanToken.includes(kw) || kw.includes(cleanToken)) {
+              const anchor = this.themeVectors[theme];
+              for (let d = 0; d < this.dimension; d++) {
+                vec[d] += anchor[d] * 1.8;
+              }
+            }
+          }
+        }
+
+        if (token.startsWith('##')) {
+          for (let d = 0; d < 16; d++) {
+            vec[d] *= 0.85;
+            vec[this.dimension - 1 - d] += 0.25;
+          }
+        }
+
+        const normalized = this.normalize(vec);
+        this.tokenCache.set(token, normalized);
+        return normalized;
+      }
+
+      embedSentence(tokens, sentenceId = 0) {
+        const sentenceVec = new Float64Array(this.dimension);
+
+        if (!tokens || tokens.length === 0) {
+          for (let d = 0; d < this.dimension; d++) {
+            sentenceVec[d] = Math.sin((d + 1) * (sentenceId + 1));
+          }
+          return this.normalize(sentenceVec);
+        }
+
+        for (let pos = 0; pos < tokens.length; pos++) {
+          const item = tokens[pos];
+          const tokenStr = typeof item === 'string' ? item : item.token;
+          const tokenId = typeof item === 'object' && item.id !== undefined ? item.id : pos;
+          const tokenVec = this.getTokenVector(tokenStr, tokenId);
+
+          let weight = 1.0;
+          if (tokenStr === '[CLS]' || tokenStr === '[SEP]' || tokenStr === '[PAD]') weight = 0.2;
+          else if (tokenStr === '[UNK]') weight = 0.4;
+          else if (tokenStr.startsWith('##')) weight = 0.9;
+
+          for (let d = 0; d < this.dimension; d++) {
+            const divTerm = Math.pow(10000, (2 * Math.floor(d / 2)) / this.dimension);
+            const pe = d % 2 === 0 ? Math.sin(pos / divTerm) : Math.cos(pos / divTerm);
+            sentenceVec[d] += (tokenVec[d] * weight) + (pe * 0.15);
+          }
+        }
+
+        return this.normalize(sentenceVec);
+      }
+
+      normalize(vec) {
+        let sumSq = 0;
+        for (let i = 0; i < vec.length; i++) sumSq += vec[i] * vec[i];
+        const norm = Math.sqrt(sumSq);
+        const out = new Float64Array(vec.length);
+        if (norm === 0) return out;
+        for (let i = 0; i < vec.length; i++) out[i] = vec[i] / norm;
+        return out;
+      }
+
+      cosineSimilarity(vecA, vecB) {
+        if (!vecA || !vecB || vecA.length !== vecB.length) return 0;
+        let dot = 0, normA = 0, normB = 0;
+        for (let i = 0; i < vecA.length; i++) {
+          dot += vecA[i] * vecB[i];
+          normA += vecA[i] * vecA[i];
+          normB += vecB[i] * vecB[i];
+        }
+        const denom = Math.sqrt(normA) * Math.sqrt(normB);
+        if (denom === 0) return 0;
+        return Math.max(-1, Math.min(1, dot / denom));
+      }
+
+      computeGramMatrix(sentenceEmbeddings) {
+        const N = sentenceEmbeddings.length;
+        const matrix = [];
+        for (let i = 0; i < N; i++) {
+          const row = new Float64Array(N);
+          for (let j = 0; j < N; j++) {
+            if (i === j) row[j] = 1.0;
+            else if (j < i) row[j] = matrix[j][i];
+            else row[j] = this.cosineSimilarity(sentenceEmbeddings[i], sentenceEmbeddings[j]);
+          }
+          matrix.push(row);
+        }
+        return matrix;
+      }
+
+      findTopNearestPairs(sentences, embeddings, topK = 5) {
+        const pairs = [];
+        const N = sentences.length;
+        for (let i = 0; i < N; i++) {
+          for (let j = i + 1; j < N; j++) {
+            const sim = this.cosineSimilarity(embeddings[i], embeddings[j]);
+            pairs.push({
+              indexA: i,
+              indexB: j,
+              sentenceA: sentences[i],
+              sentenceB: sentences[j],
+              similarity: Number(sim.toFixed(4)),
+              scorePercent: Number((sim * 100).toFixed(1)),
+              clusterA: sentences[i].cluster || 'General',
+              clusterB: sentences[j].cluster || 'General',
+              isSameCluster: sentences[i].cluster === sentences[j].cluster
+            });
+          }
+        }
+        pairs.sort((a, b) => b.similarity - a.similarity);
+        return pairs.slice(0, topK);
+      }
+
+      findNearestToQuery(queryVec, sentences, embeddings, topK = 3) {
+        const results = [];
+        for (let i = 0; i < sentences.length; i++) {
+          const sim = this.cosineSimilarity(queryVec, embeddings[i]);
+          results.push({
+            index: i,
+            sentence: sentences[i],
+            similarity: Number(sim.toFixed(4)),
+            scorePercent: Number((sim * 100).toFixed(1)),
+            cluster: sentences[i].cluster || 'General'
+          });
+        }
+        results.sort((a, b) => b.similarity - a.similarity);
+        return results.slice(0, topK);
+      }
+    }
+
+    /* ====================================================================
+       3. Principal Component Analysis (PCA) Engine
+       ==================================================================== */
+    class PCAEngine {
+      constructor() {
+        this.mean = null;
+        this.components = [];
+        this.eigenvalues = [];
+        this.explainedVarianceRatio = [];
+        this.isFitted = false;
+        this.scaleFactor = 1.0;
+      }
+
+      fit(vectors, nComponents = 3) {
+        if (!vectors || vectors.length < 2) throw new Error('At least 2 vectors required');
+        const N = vectors.length;
+        const D = vectors[0].length;
+        nComponents = Math.min(nComponents, N, D);
+
+        this.mean = new Float64Array(D);
+        for (let i = 0; i < N; i++) {
+          for (let d = 0; d < D; d++) this.mean[d] += vectors[i][d];
+        }
+        for (let d = 0; d < D; d++) this.mean[d] /= N;
+
+        const Xc = [];
+        for (let i = 0; i < N; i++) {
+          const row = new Float64Array(D);
+          for (let d = 0; d < D; d++) row[d] = vectors[i][d] - this.mean[d];
+          Xc.push(row);
+        }
+
+        const cov = [];
+        for (let r = 0; r < D; r++) {
+          const row = new Float64Array(D);
+          for (let c = 0; c < D; c++) {
+            let sum = 0;
+            for (let i = 0; i < N; i++) sum += Xc[i][r] * Xc[i][c];
+            row[c] = sum / (N - 1 || 1);
+          }
+          cov.push(row);
+        }
+
+        let totalVariance = 0;
+        for (let d = 0; d < D; d++) totalVariance += cov[d][d];
+        if (totalVariance <= 1e-9) totalVariance = 1.0;
+
+        this.components = [];
+        this.eigenvalues = [];
+        this.explainedVarianceRatio = [];
+        const workingCov = cov.map(row => new Float64Array(row));
+
+        for (let comp = 0; comp < nComponents; comp++) {
+          let v = new Float64Array(D);
+          for (let d = 0; d < D; d++) v[d] = Math.sin((comp + 1) * 31.0 + d * 17.0);
+          v = this._normalize(v);
+
+          const maxIter = 100;
+          let lastEigenvalue = 0;
+
+          for (let iter = 0; iter < maxIter; iter++) {
+            const nextV = new Float64Array(D);
+            for (let r = 0; r < D; r++) {
+              let sum = 0;
+              for (let c = 0; c < D; c++) sum += workingCov[r][c] * v[c];
+              nextV[r] = sum;
+            }
+
+            const norm = this._norm(nextV);
+            if (norm < 1e-12) break;
+            for (let d = 0; d < D; d++) v[d] = nextV[d] / norm;
+
+            let eigenvalue = 0;
+            for (let r = 0; r < D; r++) {
+              let rowDot = 0;
+              for (let c = 0; c < D; c++) rowDot += workingCov[r][c] * v[c];
+              eigenvalue += v[r] * rowDot;
+            }
+
+            if (Math.abs(eigenvalue - lastEigenvalue) < 1e-7) {
+              lastEigenvalue = eigenvalue;
+              break;
+            }
+            lastEigenvalue = eigenvalue;
+          }
+
+          const eigenvalue = Math.max(0, lastEigenvalue);
+          this.components.push(v);
+          this.eigenvalues.push(eigenvalue);
+          this.explainedVarianceRatio.push(Number((eigenvalue / totalVariance).toFixed(4)));
+
+          for (let r = 0; r < D; r++) {
+            for (let c = 0; c < D; c++) workingCov[r][c] -= eigenvalue * v[r] * v[c];
+          }
+        }
+
+        this.isFitted = true;
+        return {
+          eigenvalues: this.eigenvalues,
+          explainedVarianceRatio: this.explainedVarianceRatio,
+          cumulativeVariance: Number(this.explainedVarianceRatio.reduce((a, b) => a + b, 0).toFixed(4))
+        };
+      }
+
+      transformOne(vector) {
+        if (!this.isFitted) throw new Error('PCA is not fitted yet');
+        const D = vector.length;
+        const centered = new Float64Array(D);
+        for (let d = 0; d < D; d++) centered[d] = vector[d] - this.mean[d];
+
+        const coords = [];
+        for (let c = 0; c < this.components.length; c++) {
+          let dot = 0;
+          const pc = this.components[c];
+          for (let d = 0; d < D; d++) dot += centered[d] * pc[d];
+          coords.push(dot);
+        }
+
+        return {
+          x: coords[0] !== undefined ? coords[0] : 0,
+          y: coords[1] !== undefined ? coords[1] : 0,
+          z: coords[2] !== undefined ? coords[2] : 0
+        };
+      }
+
+      transform(vectors) {
+        if (!this.isFitted) this.fit(vectors, 3);
+        const raw = vectors.map(v => this.transformOne(v));
+        let maxAbs = 0;
+        for (const p of raw) {
+          maxAbs = Math.max(maxAbs, Math.abs(p.x), Math.abs(p.y), Math.abs(p.z));
+        }
+        if (maxAbs === 0) maxAbs = 1;
+        const scale = 1.2 / maxAbs;
+        this.scaleFactor = scale;
+
+        return raw.map((p, idx) => ({
+          index: idx,
+          x: Number((p.x * scale).toFixed(4)),
+          y: Number((p.y * scale).toFixed(4)),
+          z: Number((p.z * scale).toFixed(4)),
+          rawX: Number(p.x.toFixed(4)),
+          rawY: Number(p.y.toFixed(4)),
+          rawZ: Number(p.z.toFixed(4))
+        }));
+      }
+
+      transformQuery(vector) {
+        const raw = this.transformOne(vector);
+        return {
+          x: Number((raw.x * this.scaleFactor).toFixed(4)),
+          y: Number((raw.y * this.scaleFactor).toFixed(4)),
+          z: Number((raw.z * this.scaleFactor).toFixed(4)),
+          rawX: Number(raw.x.toFixed(4)),
+          rawY: Number(raw.y.toFixed(4)),
+          rawZ: Number(raw.z.toFixed(4))
+        };
+      }
+
+      _norm(vec) {
+        let sum = 0;
+        for (let i = 0; i < vec.length; i++) sum += vec[i] * vec[i];
+        return Math.sqrt(sum);
+      }
+
+      _normalize(vec) {
+        const n = this._norm(vec);
+        const out = new Float64Array(vec.length);
+        if (n === 0) return out;
+        for (let i = 0; i < vec.length; i++) out[i] = vec[i] / n;
+        return out;
+      }
+    }
+
+    /* ====================================================================
+       4. 3D & 2D Vector Space Visualizer Canvas Engine
+       ==================================================================== */
+    const CLUSTER_COLORS = {
+      'AI & Machine Learning': { hex: '#06B6D4', glow: 'rgba(6, 182, 212, 0.45)' },
+      'Astronomy & Space': { hex: '#8B5CF6', glow: 'rgba(139, 92, 246, 0.45)' },
+      'Neuroscience & Mind': { hex: '#10B981', glow: 'rgba(16, 185, 129, 0.45)' },
+      'Quantum Physics': { hex: '#F59E0B', glow: 'rgba(245, 158, 11, 0.45)' },
+      'Daily Life & Culture': { hex: '#EC4899', glow: 'rgba(236, 72, 153, 0.45)' },
+      'Default': { hex: '#6366F1', glow: 'rgba(99, 102, 241, 0.45)' }
+    };
+
+    class VectorVisualizer {
+      constructor(canvas, options = {}) {
+        this.canvas = canvas;
+        this.ctx = canvas.getContext('2d');
+        this.points = [];
+        this.queryPoint = null;
+        this.mode = options.mode || '3d';
+
+        this.defaultCamera = {
+          yaw: 0.65,
+          pitch: 0.35,
+          distance: 3.2,
+          zoom: 1.0,
+          panX: 0,
+          panY: 0
+        };
+
+        this.camera = { ...this.defaultCamera };
+        this.targetCamera = { ...this.defaultCamera };
+
+        this.isDragging = false;
+        this.lastMouse = { x: 0, y: 0 };
+        this.hoveredPoint = null;
+        this.onHoverCallback = options.onHover || null;
+        this.animFrameId = null;
+        this.pulseTime = 0;
+        this.activeClusters = new Set();
+
+        this.initEvents();
+        this.resize();
+        this.startLoop();
+      }
+
+      setMode(mode) {
+        if (mode === '2d' || mode === '3d') {
+          this.mode = mode;
+          this.requestRender();
+        }
+      }
+
+      setData(points, queryPoint = null) {
+        this.points = points || [];
+        this.queryPoint = queryPoint;
+        this.activeClusters.clear();
+        for (const p of this.points) {
+          if (p.cluster) this.activeClusters.add(p.cluster);
+        }
+        this.requestRender();
+      }
+
+      setQueryPoint(queryPoint) {
+        this.queryPoint = queryPoint;
+        this.requestRender();
+      }
+
+      clearQueryPoint() {
+        this.queryPoint = null;
+        this.requestRender();
+      }
+
+      toggleCluster(clusterName, isVisible) {
+        if (isVisible) this.activeClusters.add(clusterName);
+        else this.activeClusters.delete(clusterName);
+        this.requestRender();
+      }
+
+      resetCamera() {
+        this.targetCamera = { ...this.defaultCamera };
+      }
+
+      resize() {
+        const rect = this.canvas.getBoundingClientRect();
+        const dpr = window.devicePixelRatio || 1;
+        this.width = rect.width;
+        this.height = rect.height;
+        this.canvas.width = Math.floor(rect.width * dpr);
+        this.canvas.height = Math.floor(rect.height * dpr);
+        this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        this.requestRender();
+      }
+
+      initEvents() {
+        const c = this.canvas;
+        const getPos = e => {
+          const r = c.getBoundingClientRect();
+          return { x: e.clientX - r.left, y: e.clientY - r.top };
+        };
+
+        c.addEventListener('mousedown', e => {
+          this.isDragging = true;
+          this.lastMouse = getPos(e);
+        });
+
+        window.addEventListener('mouseup', () => { this.isDragging = false; });
+
+        window.addEventListener('mousemove', e => {
+          if (!this.canvas) return;
+          const pos = getPos(e);
+
+          if (this.isDragging) {
+            const dx = pos.x - this.lastMouse.x;
+            const dy = pos.y - this.lastMouse.y;
+            this.lastMouse = pos;
+
+            if (this.mode === '3d') {
+              this.targetCamera.yaw += dx * 0.008;
+              this.targetCamera.pitch = Math.max(-Math.PI / 2.3, Math.min(Math.PI / 2.3, this.targetCamera.pitch + dy * 0.008));
+            } else {
+              this.targetCamera.panX += dx;
+              this.targetCamera.panY += dy;
+            }
+            this.requestRender();
+          } else {
+            const hit = this.hitTest(pos.x, pos.y);
+            if (hit !== this.hoveredPoint) {
+              this.hoveredPoint = hit;
+              c.style.cursor = hit ? 'pointer' : 'grab';
+              if (this.onHoverCallback) this.onHoverCallback(hit, pos);
+              this.requestRender();
+            }
+          }
+        });
+
+        c.addEventListener('wheel', e => {
+          e.preventDefault();
+          const factor = e.deltaY < 0 ? 1.1 : 0.9;
+          this.targetCamera.zoom = Math.max(0.4, Math.min(3.5, this.targetCamera.zoom * factor));
+          this.requestRender();
+        }, { passive: false });
+
+        let touchStartDist = 0;
+        c.addEventListener('touchstart', e => {
+          if (e.touches.length === 1) {
+            this.isDragging = true;
+            this.lastMouse = {
+              x: e.touches[0].clientX - c.getBoundingClientRect().left,
+              y: e.touches[0].clientY - c.getBoundingClientRect().top
+            };
+          } else if (e.touches.length === 2) {
+            const dx = e.touches[0].clientX - e.touches[1].clientX;
+            const dy = e.touches[0].clientY - e.touches[1].clientY;
+            touchStartDist = Math.sqrt(dx * dx + dy * dy);
+          }
+        });
+
+        c.addEventListener('touchmove', e => {
+          if (e.touches.length === 1 && this.isDragging) {
+            const pos = {
+              x: e.touches[0].clientX - c.getBoundingClientRect().left,
+              y: e.touches[0].clientY - c.getBoundingClientRect().top
+            };
+            const dx = pos.x - this.lastMouse.x;
+            const dy = pos.y - this.lastMouse.y;
+            this.lastMouse = pos;
+            this.targetCamera.yaw += dx * 0.01;
+            this.targetCamera.pitch = Math.max(-Math.PI / 2.3, Math.min(Math.PI / 2.3, this.targetCamera.pitch + dy * 0.01));
+            this.requestRender();
+          } else if (e.touches.length === 2) {
+            const dx = e.touches[0].clientX - e.touches[1].clientX;
+            const dy = e.touches[0].clientY - e.touches[1].clientY;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            if (touchStartDist > 0) {
+              const factor = dist / touchStartDist;
+              this.targetCamera.zoom = Math.max(0.4, Math.min(3.5, this.targetCamera.zoom * factor));
+              touchStartDist = dist;
+              this.requestRender();
+            }
+          }
+        });
+
+        c.addEventListener('touchend', () => {
+          this.isDragging = false;
+          touchStartDist = 0;
+        });
+
+        window.addEventListener('resize', () => this.resize());
+      }
+
+      startLoop() {
+        const loop = () => {
+          this.pulseTime += 0.04;
+          let cameraChanged = false;
+          for (const k of ['yaw', 'pitch', 'zoom', 'panX', 'panY']) {
+            const diff = this.targetCamera[k] - this.camera[k];
+            if (Math.abs(diff) > 0.0005) {
+              this.camera[k] += diff * 0.18;
+              cameraChanged = true;
+            } else {
+              this.camera[k] = this.targetCamera[k];
+            }
+          }
+
+          if (cameraChanged || this.queryPoint || this.needsRender) {
+            this.render();
+            this.needsRender = false;
+          }
+          this.animFrameId = requestAnimationFrame(loop);
+        };
+        this.animFrameId = requestAnimationFrame(loop);
+      }
+
+      requestRender() { this.needsRender = true; }
+
+      project3D(x, y, z) {
+        const cy = Math.cos(this.camera.yaw);
+        const sy = Math.sin(this.camera.yaw);
+        const cp = Math.cos(this.camera.pitch);
+        const sp = Math.sin(this.camera.pitch);
+
+        const x1 = x * cy - z * sy;
+        const z1 = x * sy + z * cy;
+        const y2 = y * cp - z1 * sp;
+        const z2 = y * sp + z1 * cp;
+
+        const camZ = z2 + this.camera.distance;
+        const fov = 380 * this.camera.zoom;
+        const screenX = (x1 / camZ) * fov + this.width / 2 + this.camera.panX;
+        const screenY = -(y2 / camZ) * fov + this.height / 2 + this.camera.panY;
+        const scale = (1 / camZ) * fov * 0.035;
+
+        return { screenX, screenY, depth: camZ, scale, visible: camZ > 0.1 };
+      }
+
+      project2D(x, y) {
+        const scale = 140 * this.camera.zoom;
+        const screenX = x * scale + this.width / 2 + this.camera.panX;
+        const screenY = -y * scale + this.height / 2 + this.camera.panY;
+        return { screenX, screenY, depth: 1, scale: 5 };
+      }
+
+      hitTest(mouseX, mouseY) {
+        const all = [];
+        if (this.queryPoint && this.queryPoint._screen) all.push(this.queryPoint);
+        for (const p of this.points) {
+          if (p._screen && (!p.cluster || this.activeClusters.has(p.cluster))) all.push(p);
+        }
+        all.sort((a, b) => (b._screen.depth || 0) - (a._screen.depth || 0));
+
+        for (let i = all.length - 1; i >= 0; i--) {
+          const p = all[i];
+          const s = p._screen;
+          const radius = Math.max(12, (s.scale || 5) * 2.2);
+          const dx = mouseX - s.screenX;
+          const dy = mouseY - s.screenY;
+          if (dx * dx + dy * dy <= radius * radius) return p;
+        }
+        return null;
+      }
+
+      getColor(clusterName) {
+        return CLUSTER_COLORS[clusterName] || CLUSTER_COLORS.Default;
+      }
+
+      render() {
+        const ctx = this.ctx;
+        ctx.clearRect(0, 0, this.width, this.height);
+        if (this.mode === '3d') this.render3D();
+        else this.render2D();
+      }
+
+      render3D() {
+        const ctx = this.ctx;
+        this.draw3DGrid();
+        this.draw3DAxes();
+
+        const renderList = [];
+        for (const p of this.points) {
+          if (p.cluster && !this.activeClusters.has(p.cluster)) continue;
+          const proj = this.project3D(p.x, p.y, p.z);
+          p._screen = proj;
+          if (proj.visible) {
+            const groundProj = this.project3D(p.x, -1.2, p.z);
+            renderList.push({ type: 'point', depth: proj.depth, data: p, ground: groundProj });
+          }
+        }
+
+        if (this.queryPoint) {
+          const qProj = this.project3D(this.queryPoint.x, this.queryPoint.y, this.queryPoint.z);
+          this.queryPoint._screen = qProj;
+          if (qProj.visible) {
+            const groundProj = this.project3D(this.queryPoint.x, -1.2, this.queryPoint.z);
+            renderList.push({ type: 'query', depth: qProj.depth, data: this.queryPoint, ground: groundProj });
+          }
+        }
+
+        renderList.sort((a, b) => b.depth - a.depth);
+
+        if (this.queryPoint && this.queryPoint._screen && this.queryPoint.nearestNeighbors) {
+          this.drawQueryConnections();
+        }
+
+        for (const item of renderList) {
+          if (item.ground && item.ground.visible) {
+            ctx.beginPath();
+            ctx.moveTo(item.data._screen.screenX, item.data._screen.screenY);
+            ctx.lineTo(item.ground.screenX, item.ground.screenY);
+            ctx.strokeStyle = item.type === 'query' ? 'rgba(251, 191, 36, 0.45)' : 'rgba(255, 255, 255, 0.08)';
+            ctx.setLineDash([2, 4]);
+            ctx.lineWidth = 1;
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            ctx.beginPath();
+            ctx.ellipse(item.ground.screenX, item.ground.screenY, 3, 1.5, 0, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.35)';
+            ctx.fill();
+          }
+        }
+
+        for (const item of renderList) {
+          if (item.type === 'query') this.drawQueryPoint(item.data._screen);
+          else this.drawNode(item.data, item.data._screen);
+        }
+      }
+
+      render2D() {
+        const ctx = this.ctx;
+        const w = this.width, h = this.height;
+
+        ctx.beginPath();
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.07)';
+        ctx.lineWidth = 1;
+        const step = 40 * this.camera.zoom;
+        const startX = (w / 2 + this.camera.panX) % step;
+        const startY = (h / 2 + this.camera.panY) % step;
+
+        for (let x = startX; x < w; x += step) {
+          ctx.moveTo(x, 0); ctx.lineTo(x, h);
+        }
+        for (let y = startY; y < h; y += step) {
+          ctx.moveTo(0, y); ctx.lineTo(w, y);
+        }
+        ctx.stroke();
+
+        const cx = w / 2 + this.camera.panX;
+        const cy = h / 2 + this.camera.panY;
+
+        ctx.beginPath();
+        ctx.strokeStyle = 'rgba(6, 182, 212, 0.4)';
+        ctx.lineWidth = 1.5;
+        ctx.moveTo(0, cy); ctx.lineTo(w, cy);
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.strokeStyle = 'rgba(16, 185, 129, 0.4)';
+        ctx.lineWidth = 1.5;
+        ctx.moveTo(cx, 0); ctx.lineTo(cx, h);
+        ctx.stroke();
+
+        ctx.font = '11px monospace';
+        ctx.fillStyle = '#06B6D4';
+        ctx.fillText('PC1 (Principal Axis 1) →', w - 160, cy - 8);
+        ctx.fillStyle = '#10B981';
+        ctx.fillText('↑ PC2 (Principal Axis 2)', cx + 10, 20);
+
+        const renderList = [];
+        for (const p of this.points) {
+          if (p.cluster && !this.activeClusters.has(p.cluster)) continue;
+          const proj = this.project2D(p.x, p.y);
+          p._screen = proj;
+          renderList.push(p);
+        }
+
+        if (this.queryPoint) {
+          this.queryPoint._screen = this.project2D(this.queryPoint.x, this.queryPoint.y);
+        }
+
+        if (this.queryPoint && this.queryPoint.nearestNeighbors) {
+          this.drawQueryConnections();
+        }
+
+        for (const p of renderList) this.drawNode(p, p._screen);
+        if (this.queryPoint && this.queryPoint._screen) this.drawQueryPoint(this.queryPoint._screen);
+      }
+
+      draw3DGrid() {
+        const ctx = this.ctx;
+        const floorY = -1.2, size = 1.8, gridSteps = 6;
+        const step = (size * 2) / gridSteps;
+
+        ctx.beginPath();
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
+        ctx.lineWidth = 1;
+
+        for (let i = -size; i <= size; i += step) {
+          const p1 = this.project3D(i, floorY, -size);
+          const p2 = this.project3D(i, floorY, size);
+          if (p1.visible && p2.visible) {
+            ctx.moveTo(p1.screenX, p1.screenY); ctx.lineTo(p2.screenX, p2.screenY);
+          }
+          const p3 = this.project3D(-size, floorY, i);
+          const p4 = this.project3D(size, floorY, i);
+          if (p3.visible && p4.visible) {
+            ctx.moveTo(p3.screenX, p3.screenY); ctx.lineTo(p4.screenX, p4.screenY);
+          }
+        }
+        ctx.stroke();
+      }
+
+      draw3DAxes() {
+        const ctx = this.ctx;
+        const origin = this.project3D(0, 0, 0);
+        const axisLen = 1.35;
+        const axes = [
+          { name: 'PC1', end: this.project3D(axisLen, 0, 0), color: '#06B6D4' },
+          { name: 'PC2', end: this.project3D(0, axisLen, 0), color: '#10B981' },
+          { name: 'PC3', end: this.project3D(0, 0, axisLen), color: '#8B5CF6' }
+        ];
+
+        for (const ax of axes) {
+          if (origin.visible && ax.end.visible) {
+            ctx.beginPath();
+            ctx.moveTo(origin.screenX, origin.screenY);
+            ctx.lineTo(ax.end.screenX, ax.end.screenY);
+            ctx.strokeStyle = ax.color;
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+
+            ctx.font = '10px monospace';
+            ctx.fillStyle = ax.color;
+            ctx.fillText(ax.name, ax.end.screenX + 6, ax.end.screenY + 4);
+          }
+        }
+      }
+
+      drawNode(point, screen) {
+        const ctx = this.ctx;
+        const isHovered = this.hoveredPoint === point;
+        const colorInfo = this.getColor(point.cluster);
+        const baseRadius = Math.max(3.5, Math.min(10, screen.scale || 5));
+        const radius = isHovered ? baseRadius * 1.6 : baseRadius;
+
+        ctx.beginPath();
+        ctx.arc(screen.screenX, screen.screenY, radius * 2.2, 0, Math.PI * 2);
+        ctx.fillStyle = isHovered ? colorInfo.glow.replace('0.45', '0.75') : colorInfo.glow;
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.arc(screen.screenX, screen.screenY, radius, 0, Math.PI * 2);
+        ctx.fillStyle = colorInfo.hex;
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.arc(screen.screenX, screen.screenY, radius, 0, Math.PI * 2);
+        ctx.strokeStyle = isHovered ? '#FFFFFF' : 'rgba(255, 255, 255, 0.4)';
+        ctx.lineWidth = isHovered ? 2 : 1;
+        ctx.stroke();
+
+        if (isHovered) {
+          ctx.font = '11px sans-serif';
+          ctx.fillStyle = '#FFFFFF';
+          ctx.fillText(`[#${point.index + 1}]`, screen.screenX + radius + 6, screen.screenY + 4);
+        }
+      }
+
+      drawQueryPoint(screen) {
+        const ctx = this.ctx;
+        const pulse = (Math.sin(this.pulseTime * 3) + 1) / 2;
+        const baseR = Math.max(6, (screen.scale || 5) * 1.5);
+        const outerR = baseR + pulse * 14;
+
+        ctx.beginPath();
+        ctx.arc(screen.screenX, screen.screenY, outerR, 0, Math.PI * 2);
+        ctx.strokeStyle = `rgba(251, 191, 36, ${0.8 - pulse * 0.7})`;
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.arc(screen.screenX, screen.screenY, baseR * 2.5, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(251, 191, 36, 0.3)';
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.arc(screen.screenX, screen.screenY, baseR, 0, Math.PI * 2);
+        ctx.fillStyle = '#F59E0B';
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.arc(screen.screenX, screen.screenY, baseR, 0, Math.PI * 2);
+        ctx.strokeStyle = '#FEF08A';
+        ctx.lineWidth = 2.5;
+        ctx.stroke();
+
+        ctx.font = 'bold 11px monospace';
+        ctx.fillStyle = '#FDE047';
+        ctx.fillText('★ QUERY VECTOR', screen.screenX + baseR + 8, screen.screenY + 4);
+      }
+
+      drawQueryConnections() {
+        const ctx = this.ctx;
+        const qScreen = this.queryPoint._screen;
+        if (!qScreen || !qScreen.visible) return;
+
+        for (const n of this.queryPoint.nearestNeighbors || []) {
+          const neighborPoint = this.points[n.index];
+          if (neighborPoint && neighborPoint._screen && neighborPoint._screen.visible) {
+            const nScreen = neighborPoint._screen;
+            ctx.beginPath();
+            ctx.moveTo(qScreen.screenX, qScreen.screenY);
+            ctx.lineTo(nScreen.screenX, nScreen.screenY);
+            ctx.strokeStyle = 'rgba(245, 158, 11, 0.65)';
+            ctx.lineWidth = 1.5;
+            ctx.setLineDash([4, 4]);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            const midX = (qScreen.screenX + nScreen.screenX) / 2;
+            const midY = (qScreen.screenY + nScreen.screenY) / 2;
+            ctx.font = '9px monospace';
+            ctx.fillStyle = '#FDE047';
+            ctx.fillText(`sim: ${n.similarity}`, midX + 4, midY - 4);
+          }
+        }
+      }
+    }
+
+    /* ====================================================================
+       5. Automated Self-Test Suite
+       ==================================================================== */
+    class SelfTestSuite {
+      constructor() { this.results = []; }
+
+      assert(condition, message, details = '') {
+        if (!condition) throw new Error(`Assertion failed: ${message} ${details ? '(' + details + ')' : ''}`);
+      }
+
+      assertApprox(actual, expected, tolerance = 1e-4, message = '') {
+        const diff = Math.abs(actual - expected);
+        if (diff > tolerance) throw new Error(`Assertion failed: ${message} (Expected ~${expected}, got ${actual})`);
+      }
+
+      async runAll() {
+        this.results = [];
+        const startTime = performance.now();
+
+        const tests = [
+          { name: 'Tokenizer: Special Tokens & Initialization', fn: () => this.testTokenizerInit() },
+          { name: 'Tokenizer: Subword Splitting & ## Notation', fn: () => this.testTokenizerSubwords() },
+          { name: 'Tokenizer: Out-of-Vocabulary [UNK] Handling', fn: () => this.testTokenizerUnknown() },
+          { name: 'Tokenizer: Dynamic Vocabulary Adjustment', fn: () => this.testTokenizerVocabSlider() },
+          { name: 'Analytics: Character/Token Compression Ratio', fn: () => this.testTokenizerAnalytics() },
+          { name: 'Embeddings: 64-Dimensional Representation', fn: () => this.testEmbeddingDimensionality() },
+          { name: 'Embeddings: L2 Unit Normalization (||v|| = 1.0)', fn: () => this.testEmbeddingNormalization() },
+          { name: 'Math: Cosine Similarity Axioms (Identity, Symmetry, Bounds)', fn: () => this.testCosineSimilarityAxioms() },
+          { name: 'Math: Gram Matrix Symmetry (G = G^T) & Unit Diagonal', fn: () => this.testGramMatrixIntegrity() },
+          { name: 'PCA: Orthogonality of Principal Components (PC1 ⊥ PC2 ⊥ PC3)', fn: () => this.testPCAOrthogonality() },
+          { name: 'PCA: 3D Latent Space Projection & Query Mapping', fn: () => this.testPCAProjectionAndQuery() },
+          { name: 'Comparison: Top-5 Nearest Sentence Ranking', fn: () => this.testNearestSentenceComparison() }
+        ];
+
+        for (const t of tests) {
+          const tStart = performance.now();
+          try {
+            await t.fn();
+            const duration = (performance.now() - tStart).toFixed(2);
+            this.results.push({ name: t.name, passed: true, durationMs: duration, error: null });
+          } catch (err) {
+            const duration = (performance.now() - tStart).toFixed(2);
+            this.results.push({ name: t.name, passed: false, durationMs: duration, error: err.message });
+          }
+        }
+
+        const totalDuration = (performance.now() - startTime).toFixed(2);
+        const passedCount = this.results.filter(r => r.passed).length;
+        const failedCount = this.results.length - passedCount;
+
+        return {
+          results: this.results,
+          passedCount,
+          failedCount,
+          totalCount: this.results.length,
+          isAllPassed: failedCount === 0,
+          totalDurationMs: totalDuration
+        };
+      }
+
+      testTokenizerInit() {
+        const tok = new WordPieceTokenizer({ maxVocabSize: 50 });
+        tok.train('hello world neural network');
+        this.assert(tok.vocab.has('[PAD]'), '[PAD] exists');
+        this.assert(tok.vocab.has('[UNK]'), '[UNK] exists');
+        this.assert(tok.vocab.get('[PAD]') === 0, '[PAD] id is 0');
+      }
+
+      testTokenizerSubwords() {
+        const tok = new WordPieceTokenizer({ maxVocabSize: 60 });
+        tok.train('transform transformer transforming computation compute');
+        const res = tok.tokenize('transforming');
+        this.assert(res.tokens.length >= 1, 'Tokens generated');
+        if (res.tokens.length > 1) {
+          this.assert(res.tokens.slice(1).some(t => t.token.startsWith('##')), 'Subword has ## prefix');
+        }
+      }
+
+      testTokenizerUnknown() {
+        const tok = new WordPieceTokenizer({ maxVocabSize: 50 });
+        tok.train('the quick brown fox');
+        const res = tok.tokenize('Ωmega Ψ');
+        this.assert(res.tokens.some(t => t.token === '[UNK]' || t.isUnknown), 'Emits [UNK] for out-of-vocab');
+      }
+
+      testTokenizerVocabSlider() {
+        const corpus = 'deep learning neural networks transformer attention weights gradient';
+        const tok = new WordPieceTokenizer();
+        tok.train(corpus, 35);
+        const s1 = tok.vocab.size;
+        this.assert(s1 <= 35, 'Vocab respects limit 35');
+        tok.train(corpus, 55);
+        const s2 = tok.vocab.size;
+        this.assert(s2 <= 55, 'Vocab respects limit 55');
+        this.assert(s2 >= s1, 'Higher slider yields equal/greater vocab size');
+      }
+
+      testTokenizerAnalytics() {
+        const tok = new WordPieceTokenizer({ maxVocabSize: 60 });
+        tok.train('artificial intelligence and machine learning');
+        const sample = 'machine learning';
+        const res = tok.tokenize(sample);
+        this.assert(res.stats.rawCharCount === sample.length, 'Char count accurate');
+        this.assert(res.stats.emittedTokenCount === res.tokens.length, 'Token count accurate');
+        this.assert(res.stats.compressionRatio > 0, 'Compression computed');
+      }
+
+      testEmbeddingDimensionality() {
+        const engine = new EmbeddingEngine(64);
+        const vec = engine.embedSentence(['neural', 'network', '##s']);
+        this.assert(vec.length === 64, 'Dimension is strictly 64');
+        for (let i = 0; i < 64; i++) this.assert(!isNaN(vec[i]) && isFinite(vec[i]), `Dim ${i} is finite`);
+      }
+
+      testEmbeddingNormalization() {
+        const engine = new EmbeddingEngine(64);
+        const vec = engine.embedSentence(['transformer', 'attention', 'model']);
+        let sumSq = 0;
+        for (let i = 0; i < vec.length; i++) sumSq += vec[i] * vec[i];
+        this.assertApprox(Math.sqrt(sumSq), 1.0, 1e-5, 'L2 norm equals 1.0');
+      }
+
+      testCosineSimilarityAxioms() {
+        const engine = new EmbeddingEngine(64);
+        const u = engine.embedSentence(['galaxy', 'stars', 'cosmos'], 1);
+        const v = engine.embedSentence(['neural', 'learning', 'deep'], 2);
+
+        this.assertApprox(engine.cosineSimilarity(u, u), 1.0, 1e-5, 'Self similarity = 1.0');
+        this.assertApprox(engine.cosineSimilarity(u, v), engine.cosineSimilarity(v, u), 1e-6, 'Symmetric');
+        const s = engine.cosineSimilarity(u, v);
+        this.assert(s >= -1.0 && s <= 1.0, 'Bounded in [-1, 1]');
+      }
+
+      testGramMatrixIntegrity() {
+        const engine = new EmbeddingEngine(64);
+        const embeds = [
+          engine.embedSentence(['neural', 'network'], 0),
+          engine.embedSentence(['deep', 'learning'], 1),
+          engine.embedSentence(['galaxy', 'stars'], 2)
+        ];
+        const G = engine.computeGramMatrix(embeds);
+        this.assert(G.length === 3 && G[0].length === 3, 'Gram is 3x3');
+        for (let i = 0; i < 3; i++) this.assertApprox(G[i][i], 1.0, 1e-5, `Diagonal ${i} is 1.0`);
+        for (let i = 0; i < 3; i++) {
+          for (let j = 0; j < 3; j++) this.assertApprox(G[i][j], G[j][i], 1e-5, 'Symmetric G_ij == G_ji');
+        }
+      }
+
+      testPCAOrthogonality() {
+        const engine = new EmbeddingEngine(64);
+        const pca = new PCAEngine();
+        const vectors = [];
+        for (let i = 0; i < 10; i++) vectors.push(engine.embedSentence([`token_${i}`, `word_${i * 2}`], i));
+
+        pca.fit(vectors, 3);
+        this.assert(pca.components.length === 3, 'Extracted 3 components');
+
+        for (let c = 0; c < 3; c++) {
+          let sumSq = 0;
+          for (let d = 0; d < 64; d++) sumSq += pca.components[c][d] * pca.components[c][d];
+          this.assertApprox(Math.sqrt(sumSq), 1.0, 1e-3, `PC${c + 1} is unit length`);
+        }
+
+        const dot12 = pca.components[0].reduce((sum, val, d) => sum + val * pca.components[1][d], 0);
+        const dot13 = pca.components[0].reduce((sum, val, d) => sum + val * pca.components[2][d], 0);
+        const dot23 = pca.components[1].reduce((sum, val, d) => sum + val * pca.components[2][d], 0);
+
+        this.assertApprox(dot12, 0.0, 1e-2, 'PC1 ⊥ PC2');
+        this.assertApprox(dot13, 0.0, 1e-2, 'PC1 ⊥ PC3');
+        this.assertApprox(dot23, 0.0, 1e-2, 'PC2 ⊥ PC3');
+      }
+
+      testPCAProjectionAndQuery() {
+        const engine = new EmbeddingEngine(64);
+        const pca = new PCAEngine();
+        const vectors = [];
+        for (let i = 0; i < 8; i++) vectors.push(engine.embedSentence([`sample_${i}`], i));
+
+        const projected = pca.transform(vectors);
+        this.assert(projected.length === 8, '8 vectors projected');
+        this.assert('x' in projected[0] && 'y' in projected[0] && 'z' in projected[0], 'Has 3D coords');
+
+        const queryVec = engine.embedSentence(['novel', 'query', 'vector'], 99);
+        const qCoord = pca.transformQuery(queryVec);
+        this.assert(!isNaN(qCoord.x) && !isNaN(qCoord.y) && !isNaN(qCoord.z), 'Query coords valid');
+      }
+
+      testNearestSentenceComparison() {
+        const engine = new EmbeddingEngine(64);
+        const sentences = [
+          { text: 'deep neural network architecture', cluster: 'AI & Machine Learning' },
+          { text: 'convolutional networks for vision', cluster: 'AI & Machine Learning' },
+          { text: 'distant galaxies and cosmos', cluster: 'Astronomy & Space' },
+          { text: 'black holes and spacetime curvature', cluster: 'Astronomy & Space' },
+          { text: 'synaptic plasticity in human cortex', cluster: 'Neuroscience & Mind' }
+        ];
+        const embeds = sentences.map((s, idx) => engine.embedSentence(s.text.split(' '), idx));
+        const topPairs = engine.findTopNearestPairs(sentences, embeds, 5);
+        this.assert(topPairs.length <= 5, 'Top 5 returned');
+        this.assert(topPairs[0].similarity >= topPairs[1].similarity, 'Sorted descending');
+      }
+    }
+
+    /* ====================================================================
+       6. Main Application Controller
+       ==================================================================== */
+    const DEFAULT_CORPUS = [
+      "Transformers utilize self-attention mechanisms to process sequential deep representations.",
+      "Neural network weights are optimized via gradient descent and backpropagation.",
+      "Large language models learn rich contextual semantic representations from unsupervised text.",
+      "Convolutional neural networks extract hierarchical visual feature representations.",
+      "Astronomers observe distant spiral galaxies and gravitational lensing with orbital telescopes.",
+      "Cosmic radiation permeates the expanding universe across billions of lightyears.",
+      "Black holes warp spacetime geometry beyond the gravitational event horizon.",
+      "Interstellar nebulae collapse under gravity to ignite thermonuclear fusion in stars.",
+      "Synaptic plasticity enables biological neural circuits to encode episodic memory.",
+      "Cortical neurons transmit electrical action potentials through interconnected dendrites.",
+      "Sensory perception and cognitive consciousness emerge from recurrent thalamocortical networks.",
+      "Neurotransmitters modulate synaptic transmission across the cerebral cortex.",
+      "Quantum entanglement links separated qubits through non-local wave state superposition.",
+      "Subatomic particles exhibit dual wave-particle behaviors under Heisenberg uncertainty.",
+      "Superconducting quantum circuits manipulate coherent quantum states for computation.",
+      "Schrodinger wave mechanics describes the probabilistic evolution of atomic states.",
+      "Drinking warm morning coffee while reading books in the park brings peaceful contemplation.",
+      "Friends enjoy shared laughter and lively conversation over weekend breakfast.",
+      "Gentle rain falls on the garden during quiet evening contemplation.",
+      "Walking along autumn trees with golden sunshine inspires creative tranquility."
+    ];
+
+    const THEME_CLUSTERS = [
+      { name: 'AI & Machine Learning', range: [0, 3] },
+      { name: 'Astronomy & Space', range: [4, 7] },
+      { name: 'Neuroscience & Mind', range: [8, 11] },
+      { name: 'Quantum Physics', range: [12, 15] },
+      { name: 'Daily Life & Culture', range: [16, 19] }
+    ];
+
+    function getClusterForIndex(index) {
+      for (const c of THEME_CLUSTERS) {
+        if (index >= c.range[0] && index <= c.range[1]) return c.name;
+      }
+      return 'Default';
+    }
+
+    class SNDApp {
+      constructor() {
+        this.corpusSentences = [...DEFAULT_CORPUS];
+        this.tokenizer = new WordPieceTokenizer({ maxVocabSize: 80 });
+        this.embeddingEngine = new EmbeddingEngine(64);
+        this.pcaEngine = new PCAEngine();
+        this.visualizer = null;
+        this.sentenceData = [];
+        this.gramMatrix = [];
+        this.topNearestPairs = [];
+        this.currentQuery = null;
+
+        this.initDOMElements();
+        this.initVisualizer();
+        this.bindEvents();
+        this.runFullPipeline();
+      }
+
+      initDOMElements() {
+        this.navBtns = document.querySelectorAll('.nav-btn');
+        this.tabPanes = document.querySelectorAll('.tab-pane');
+
+        this.statVocabSize = document.getElementById('stat-vocab-size');
+        this.statSentenceCount = document.getElementById('stat-sentence-count');
+        this.statPcaVariance = document.getElementById('stat-pca-variance');
+        this.overviewQuickInput = document.getElementById('overview-quick-input');
+        this.btnOverviewQuery = document.getElementById('btn-overview-query');
+        this.overviewQueryResult = document.getElementById('overview-query-result');
+        this.overviewMatchScore = document.getElementById('overview-match-score');
+        this.overviewMatchText = document.getElementById('overview-match-text');
+
+        this.corpusTextarea = document.getElementById('corpus-textarea');
+        this.vocabSizeSlider = document.getElementById('vocab-size-slider');
+        this.vocabSizeVal = document.getElementById('vocab-size-val');
+        this.btnTrainVocab = document.getElementById('btn-train-vocab');
+        this.btnRunTokenizer = document.getElementById('btn-run-tokenizer');
+        this.btnResetCorpus = document.getElementById('btn-reset-corpus');
+        this.liveTestInput = document.getElementById('live-test-input');
+        this.statRawChars = document.getElementById('stat-raw-chars');
+        this.statEmittedTokens = document.getElementById('stat-emitted-tokens');
+        this.statCompression = document.getElementById('stat-compression');
+        this.tokenStreamChips = document.getElementById('token-stream-chips');
+        this.subwordSplitsContainer = document.getElementById('subword-splits-container');
+        this.splitCountBadge = document.getElementById('split-count-badge');
+        this.unknownAlert = document.getElementById('unknown-alert');
+        this.vocabSearch = document.getElementById('vocab-search');
+        this.vocabTableBody = document.getElementById('vocab-table-body');
+
+        this.sentenceSelectVector = document.getElementById('sentence-select-vector');
+        this.selectedSentenceText = document.getElementById('selected-sentence-text');
+        this.vectorDimensionsGrid = document.getElementById('vector-dimensions-grid');
+        this.vecStatNorm = document.getElementById('vec-stat-norm');
+        this.vecStatMin = document.getElementById('vec-stat-min');
+        this.vecStatMax = document.getElementById('vec-stat-max');
+        this.cosineSelectA = document.getElementById('cosine-select-a');
+        this.cosineSelectB = document.getElementById('cosine-select-b');
+        this.cosineScoreNumber = document.getElementById('cosine-score-number');
+        this.cosineScoreBar = document.getElementById('cosine-score-bar');
+        this.cosineClusterAlignment = document.getElementById('cosine-cluster-alignment');
+        this.gramMatrixHeatmap = document.getElementById('gram-matrix-heatmap');
+
+        this.pcaCanvas = document.getElementById('pca-canvas');
+        this.btnToggleProjectionMode = document.getElementById('btn-toggle-projection-mode');
+        this.btnResetCamera = document.getElementById('btn-reset-camera');
+        this.canvasTooltip = document.getElementById('canvas-tooltip');
+        this.tooltipText = document.getElementById('tooltip-text');
+        this.tooltipCluster = document.getElementById('tooltip-cluster');
+        this.tooltipCoords = document.getElementById('tooltip-coords');
+        this.pcaPc1Var = document.getElementById('pca-pc1-var');
+        this.pcaPc2Var = document.getElementById('pca-pc2-var');
+        this.pcaPc3Var = document.getElementById('pca-pc3-var');
+        this.pcaTotalVar = document.getElementById('pca-total-var');
+
+        this.playgroundQueryInput = document.getElementById('playground-query-input');
+        this.btnRunQuery = document.getElementById('btn-run-query');
+        this.btnClearQuery = document.getElementById('btn-clear-query');
+        this.playgroundNearestList = document.getElementById('playground-nearest-list');
+
+        this.topNearestPairsContainer = document.getElementById('top-nearest-pairs-container');
+
+        this.btnRunSelftest = document.getElementById('btn-run-selftest');
+        this.testStatTotal = document.getElementById('test-stat-total');
+        this.testStatPassed = document.getElementById('test-stat-passed');
+        this.testStatFailed = document.getElementById('test-stat-failed');
+        this.testStatTime = document.getElementById('test-stat-time');
+        this.testResultsList = document.getElementById('test-results-list');
+      }
+
+      initVisualizer() {
+        if (!this.pcaCanvas) return;
+        this.visualizer = new VectorVisualizer(this.pcaCanvas, {
+          onHover: (point, pos) => this.handlePointHover(point, pos)
+        });
+      }
+
+      bindEvents() {
+        this.navBtns.forEach(btn => {
+          btn.addEventListener('click', () => {
+            this.switchTab(btn.getAttribute('data-tab'));
+          });
+        });
+
+        this.vocabSizeSlider.addEventListener('input', e => {
+          this.vocabSizeVal.textContent = Number(e.target.value);
+        });
+
+        this.vocabSizeSlider.addEventListener('change', () => {
+          this.trainTokenizer(Number(this.vocabSizeSlider.value));
+        });
+
+        this.btnTrainVocab.addEventListener('click', () => {
+          this.trainTokenizer(Number(this.vocabSizeSlider.value));
+        });
+
+        this.btnRunTokenizer.addEventListener('click', () => {
+          this.updateLiveTokenization();
+        });
+
+        this.btnResetCorpus.addEventListener('click', () => {
+          this.corpusSentences = [...DEFAULT_CORPUS];
+          this.corpusTextarea.value = this.corpusSentences.join('\n\n');
+          this.trainTokenizer(Number(this.vocabSizeSlider.value));
+        });
+
+        this.liveTestInput.addEventListener('input', () => {
+          this.updateLiveTokenization();
+        });
+
+        this.vocabSearch.addEventListener('input', () => {
+          this.renderVocabTable(this.vocabSearch.value);
+        });
+
+        this.sentenceSelectVector.addEventListener('change', () => {
+          this.renderVectorInspector(Number(this.sentenceSelectVector.value));
+        });
+
+        const updateCosine = () => {
+          this.renderCosineCalculator(Number(this.cosineSelectA.value), Number(this.cosineSelectB.value));
+        };
+        this.cosineSelectA.addEventListener('change', updateCosine);
+        this.cosineSelectB.addEventListener('change', updateCosine);
+
+        this.btnToggleProjectionMode.addEventListener('click', () => {
+          const newMode = this.visualizer.mode === '3d' ? '2d' : '3d';
+          this.visualizer.setMode(newMode);
+          this.btnToggleProjectionMode.textContent = newMode === '3d' ? 'Mode: 3D Space' : 'Mode: 2D Fallback';
+        });
+
+        this.btnResetCamera.addEventListener('click', () => {
+          this.visualizer.resetCamera();
+        });
+
+        document.querySelectorAll('.cluster-checkbox-row input').forEach(cb => {
+          cb.addEventListener('change', e => {
+            this.visualizer.toggleCluster(e.target.getAttribute('data-cluster'), e.target.checked);
+          });
+        });
+
+        this.btnRunQuery.addEventListener('click', () => {
+          this.executePlaygroundQuery(this.playgroundQueryInput.value);
+        });
+
+        this.playgroundQueryInput.addEventListener('keydown', e => {
+          if (e.key === 'Enter') this.executePlaygroundQuery(this.playgroundQueryInput.value);
+        });
+
+        this.btnClearQuery.addEventListener('click', () => {
+          this.playgroundQueryInput.value = '';
+          this.visualizer.clearQueryPoint();
+          this.playgroundNearestList.innerHTML = `
+            <div style="font-size:12px; color:var(--text-dim); text-align:center; padding:16px;">
+              Enter a sentence above to query the 3D latent space.
+            </div>
+          `;
+        });
+
+        this.btnOverviewQuery.addEventListener('click', () => {
+          const q = this.overviewQuickInput.value.trim();
+          if (!q) return;
+          const res = this.executePlaygroundQuery(q);
+          if (res && res.nearestNeighbors && res.nearestNeighbors.length > 0) {
+            const top = res.nearestNeighbors[0];
+            this.overviewQueryResult.style.display = 'block';
+            this.overviewMatchScore.textContent = `${(top.similarity * 100).toFixed(1)}% SIMILARITY`;
+            this.overviewMatchText.textContent = `"${top.sentence.text}" [${top.sentence.cluster}]`;
+          }
+        });
+
+        this.btnRunSelftest.addEventListener('click', () => {
+          this.runSelfTestSuite();
+        });
+      }
+
+      switchTab(tabId) {
+        this.navBtns.forEach(btn => {
+          btn.classList.toggle('active', btn.getAttribute('data-tab') === tabId);
+        });
+        this.tabPanes.forEach(pane => {
+          pane.classList.toggle('active', pane.id === tabId);
+        });
+        if (tabId === 'tab-visualizer' && this.visualizer) {
+          setTimeout(() => this.visualizer.resize(), 50);
+        }
+      }
+
+      setQuickInput(text) {
+        this.overviewQuickInput.value = text;
+        this.btnOverviewQuery.click();
+      }
+
+      setLiveInput(text) {
+        this.liveTestInput.value = text;
+        this.updateLiveTokenization();
+      }
+
+      setPlaygroundInput(text) {
+        this.playgroundQueryInput.value = text;
+        this.executePlaygroundQuery(text);
+      }
+
+      handlePointHover(point, pos) {
+        if (!point) {
+          this.canvasTooltip.style.display = 'none';
+          return;
+        }
+        this.tooltipText.textContent = point.text || (point.type === 'query' ? `Query: ${point.text}` : `Sentence #${point.index + 1}`);
+        this.tooltipCluster.textContent = point.cluster || 'Query Point';
+        this.tooltipCoords.textContent = `Coords: (${point.x.toFixed(2)}, ${point.y.toFixed(2)}, ${point.z.toFixed(2)})`;
+        this.canvasTooltip.style.left = `${pos.x}px`;
+        this.canvasTooltip.style.top = `${pos.y}px`;
+        this.canvasTooltip.style.display = 'block';
+      }
+
+      trainTokenizer(vocabSize = 80) {
+        const corpusText = this.corpusTextarea.value.trim();
+        this.tokenizer.train(corpusText, vocabSize);
+        const actualVocabSize = this.tokenizer.vocab.size;
+        this.statVocabSize.textContent = actualVocabSize;
+        this.vocabSizeVal.textContent = actualVocabSize;
+
+        this.renderVocabTable(this.vocabSearch.value);
+        this.updateLiveTokenization();
+        this.recomputeSentenceEmbeddings();
+      }
+
+      updateLiveTokenization() {
+        const text = this.liveTestInput.value;
+        const res = this.tokenizer.tokenize(text, false);
+
+        this.statRawChars.textContent = res.stats.rawCharCount;
+        this.statEmittedTokens.textContent = res.stats.emittedTokenCount;
+        this.statCompression.textContent = res.stats.compressionRatio > 0 ? res.stats.compressionRatio : '0.0';
+
+        if (res.stats.unknownCount > 0) {
+          this.unknownAlert.style.display = 'inline';
+          this.unknownAlert.textContent = `⚠ ${res.stats.unknownCount} Out-of-Vocabulary Token(s)`;
+        } else {
+          this.unknownAlert.style.display = 'none';
+        }
+
+        this.tokenStreamChips.innerHTML = '';
+        if (res.tokens.length === 0) {
+          this.tokenStreamChips.innerHTML = '<span style="color:var(--text-dim); font-size:12px;">Type above to inspect token stream...</span>';
+        } else {
+          res.tokens.forEach(t => {
+            const chip = document.createElement('span');
+            chip.className = `token-chip type-${t.type}`;
+            chip.innerHTML = `${this.escapeHtml(t.token)} <span class="token-id">#${t.id ?? '?'}</span>`;
+            this.tokenStreamChips.appendChild(chip);
+          });
+        }
+
+        this.subwordSplitsContainer.innerHTML = '';
+        this.splitCountBadge.textContent = `${res.wordSplits.length} Words`;
+
+        res.wordSplits.forEach(item => {
+          const card = document.createElement('div');
+          card.className = 'split-card';
+          const row = item.tokens.map(t => {
+            const isSub = t.startsWith('##');
+            const isUnk = t === '[UNK]';
+            const color = isUnk ? '#F87171' : isSub ? '#A78BFA' : '#34D399';
+            return `<span style="font-family:var(--font-mono); font-size:11px; color:${color}; font-weight:600;">${this.escapeHtml(t)}</span>`;
+          }).join('<span class="split-arrow">+</span>');
+
+          card.innerHTML = `
+            <div class="split-orig-word">"${this.escapeHtml(item.word)}"</div>
+            <div class="split-tokens-row">${row}</div>
+          `;
+          this.subwordSplitsContainer.appendChild(card);
+        });
+      }
+
+      renderVocabTable(filter = '') {
+        const list = this.tokenizer.getVocabList();
+        const filtered = filter
+          ? list.filter(item => item.token.toLowerCase().includes(filter.toLowerCase()))
+          : list;
+
+        this.vocabTableBody.innerHTML = '';
+        filtered.forEach(item => {
+          const tr = document.createElement('tr');
+          const badgeClass = item.type === 'special'
+            ? 'badge-special'
+            : item.type === 'base'
+            ? 'badge-base'
+            : item.token.startsWith('##')
+            ? 'badge-subword'
+            : 'badge-word';
+
+          tr.innerHTML = `
+            <td style="color:var(--text-dim);">${item.id}</td>
+            <td style="font-weight:600; color:#FFF;">${this.escapeHtml(item.token)}</td>
+            <td style="color:var(--primary);">${item.frequency}</td>
+            <td><span class="status-badge ${badgeClass}">${item.status}</span></td>
+          `;
+          this.vocabTableBody.appendChild(tr);
+        });
+      }
+
+      recomputeSentenceEmbeddings() {
+        const rawLines = this.corpusTextarea.value.split('\n')
+          .map(l => l.trim())
+          .filter(l => l.length > 0);
+
+        this.corpusSentences = rawLines;
+        this.statSentenceCount.textContent = this.corpusSentences.length;
+
+        this.sentenceData = this.corpusSentences.map((text, idx) => {
+          const cluster = getClusterForIndex(idx);
+          const tokenized = this.tokenizer.tokenize(text, false);
+          const embedding = this.embeddingEngine.embedSentence(tokenized.tokens, idx);
+          return { id: idx, index: idx, text, cluster, tokens: tokenized.tokens, embedding };
+        });
+
+        this.populateSentenceSelectors();
+
+        const embeddingsList = this.sentenceData.map(s => s.embedding);
+        this.gramMatrix = this.embeddingEngine.computeGramMatrix(embeddingsList);
+        this.renderGramMatrix();
+
+        const pcaFit = this.pcaEngine.fit(embeddingsList, 3);
+        const projected = this.pcaEngine.transform(embeddingsList);
+
+        for (let i = 0; i < this.sentenceData.length; i++) {
+          this.sentenceData[i].x = projected[i].x;
+          this.sentenceData[i].y = projected[i].y;
+          this.sentenceData[i].z = projected[i].z;
+          this.sentenceData[i].rawX = projected[i].rawX;
+          this.sentenceData[i].rawY = projected[i].rawY;
+          this.sentenceData[i].rawZ = projected[i].rawZ;
+        }
+
+        const pc1 = (pcaFit.explainedVarianceRatio[0] * 100).toFixed(1);
+        const pc2 = (pcaFit.explainedVarianceRatio[1] * 100).toFixed(1);
+        const pc3 = (pcaFit.explainedVarianceRatio[2] * 100).toFixed(1);
+        const totalVar = (pcaFit.cumulativeVariance * 100).toFixed(1);
+
+        this.pcaPc1Var.textContent = `${pc1}%`;
+        this.pcaPc2Var.textContent = `${pc2}%`;
+        this.pcaPc3Var.textContent = `${pc3}%`;
+        this.pcaTotalVar.textContent = `${totalVar}%`;
+        this.statPcaVariance.textContent = `${totalVar}%`;
+
+        if (this.visualizer) this.visualizer.setData(this.sentenceData);
+
+        this.topNearestPairs = this.embeddingEngine.findTopNearestPairs(this.sentenceData, embeddingsList, 5);
+        this.renderTopNearestPairs();
+
+        this.renderVectorInspector(0);
+        this.renderCosineCalculator(0, 1);
+      }
+
+      populateSentenceSelectors() {
+        const opts = this.sentenceData.map(s => 
+          `<option value="${s.id}">#${s.id + 1}: ${this.escapeHtml(s.text.slice(0, 32))}...</option>`
+        ).join('');
+
+        this.sentenceSelectVector.innerHTML = opts;
+        this.cosineSelectA.innerHTML = opts;
+        this.cosineSelectB.innerHTML = opts;
+        if (this.sentenceData.length > 1) this.cosineSelectB.value = '1';
+      }
+
+      renderVectorInspector(sentenceIdx) {
+        const sentence = this.sentenceData[sentenceIdx];
+        if (!sentence) return;
+
+        this.selectedSentenceText.textContent = `"${sentence.text}" [${sentence.cluster}]`;
+        const vec = sentence.embedding;
+        let min = Infinity, max = -Infinity, sumSq = 0;
+
+        for (let i = 0; i < vec.length; i++) {
+          if (vec[i] < min) min = vec[i];
+          if (vec[i] > max) max = vec[i];
+          sumSq += vec[i] * vec[i];
+        }
+
+        this.vecStatNorm.textContent = Math.sqrt(sumSq).toFixed(4);
+        this.vecStatMin.textContent = min.toFixed(4);
+        this.vecStatMax.textContent = max.toFixed(4);
+
+        this.vectorDimensionsGrid.innerHTML = '';
+        for (let d = 0; d < 64; d++) {
+          const cell = document.createElement('div');
+          cell.className = 'vector-dim-cell';
+          const val = vec[d];
+          const color = val >= 0 ? '#34D399' : '#F87171';
+          cell.innerHTML = `
+            <span class="dim-idx">${d}</span>
+            <span class="dim-val" style="color:${color};">${val >= 0 ? '+' : ''}${val.toFixed(3)}</span>
+          `;
+          this.vectorDimensionsGrid.appendChild(cell);
+        }
+      }
+
+      renderCosineCalculator(idxA, idxB) {
+        const sA = this.sentenceData[idxA];
+        const sB = this.sentenceData[idxB];
+        if (!sA || !sB) return;
+
+        const sim = this.embeddingEngine.cosineSimilarity(sA.embedding, sB.embedding);
+        const score = Number(sim.toFixed(4));
+        const pct = Math.max(0, Math.min(100, (score * 100))).toFixed(1);
+
+        this.cosineScoreNumber.textContent = score.toFixed(4);
+        this.cosineScoreBar.style.width = `${pct}%`;
+
+        const isSame = sA.cluster === sB.cluster;
+        this.cosineClusterAlignment.textContent = isSame
+          ? `Same Cluster Alignment (${sA.cluster})`
+          : `Cross-Cluster Comparison (${sA.cluster} ↔ ${sB.cluster})`;
+        this.cosineClusterAlignment.style.color = isSame ? 'var(--success)' : 'var(--text-muted)';
+      }
+
+      renderGramMatrix() {
+        const N = this.sentenceData.length;
+        if (N === 0) return;
+
+        let html = '<table class="gram-table"><thead><tr><th class="gram-header-cell">G</th>';
+        for (let j = 0; j < N; j++) {
+          html += `<th class="gram-header-cell" title="${this.escapeHtml(this.sentenceData[j].text)}">#${j + 1}</th>`;
+        }
+        html += '</tr></thead><tbody>';
+
+        for (let i = 0; i < N; i++) {
+          html += `<tr><th class="gram-header-cell" title="${this.escapeHtml(this.sentenceData[i].text)}">#${i + 1}</th>`;
+          for (let j = 0; j < N; j++) {
+            const val = this.gramMatrix[i][j];
+            const clamped = Math.max(0, Math.min(1, val));
+            const r = Math.floor(6 * clamped + 13 * (1 - clamped));
+            const g = Math.floor(182 * clamped + 27 * (1 - clamped));
+            const b = Math.floor(212 * clamped + 42 * (1 - clamped));
+            const bg = `rgb(${r}, ${g}, ${b})`;
+            const textColor = clamped > 0.5 ? '#000' : '#FFF';
+
+            html += `
+              <td class="gram-cell" style="background:${bg}; color:${textColor};" 
+                  title="S#${i + 1} & S#${j + 1}: ${val.toFixed(4)}"
+                  onclick="window.app.selectGramCell(${i}, ${j})">
+                ${val.toFixed(2)}
+              </td>
+            `;
+          }
+          html += '</tr>';
+        }
+        html += '</tbody></table>';
+        this.gramMatrixHeatmap.innerHTML = html;
+      }
+
+      selectGramCell(i, j) {
+        this.switchTab('tab-embeddings');
+        this.cosineSelectA.value = i;
+        this.cosineSelectB.value = j;
+        this.renderCosineCalculator(i, j);
+      }
+
+      renderTopNearestPairs() {
+        this.topNearestPairsContainer.innerHTML = '';
+        this.topNearestPairs.forEach((pair, idx) => {
+          const card = document.createElement('div');
+          card.className = 'neighbor-card';
+
+          const alignmentBadge = pair.isSameCluster
+            ? `<span class="card-badge" style="background:rgba(16, 185, 129, 0.2); color:#34D399;">Same Cluster: ${pair.clusterA}</span>`
+            : `<span class="card-badge" style="background:rgba(139, 92, 246, 0.2); color:#A78BFA;">Cross-Cluster: ${pair.clusterA} ↔ ${pair.clusterB}</span>`;
+
+          card.innerHTML = `
+            <div style="display:flex; align-items:flex-start; gap:12px; flex:1;">
+              <div class="rank-badge">#${idx + 1}</div>
+              <div style="display:flex; flex-direction:column; gap:6px; flex:1;">
+                <div style="font-size:13px; font-weight:600; color:#FFF; font-family:var(--font-mono);">
+                  "${this.escapeHtml(pair.sentenceA.text)}"
+                </div>
+                <div style="font-size:12px; color:var(--text-muted); font-family:var(--font-mono);">
+                  ↔ "${this.escapeHtml(pair.sentenceB.text)}"
+                </div>
+                <div style="margin-top:2px;">${alignmentBadge}</div>
+              </div>
+            </div>
+
+            <div class="sim-score-meter">
+              <div class="sim-percentage">${(pair.similarity * 100).toFixed(1)}%</div>
+              <div class="sim-bar-bg">
+                <div class="sim-bar-fill" style="width:${Math.max(0, pair.similarity * 100)}%;"></div>
+              </div>
+              <div style="font-size:10px; color:var(--text-dim); margin-top:4px; font-family:var(--font-mono);">
+                cos: ${pair.similarity.toFixed(4)}
+              </div>
+            </div>
+          `;
+          this.topNearestPairsContainer.appendChild(card);
+        });
+      }
+
+      executePlaygroundQuery(queryText) {
+        queryText = queryText.trim();
+        if (!queryText) return;
+
+        const tokenized = this.tokenizer.tokenize(queryText, false);
+        const queryVec = this.embeddingEngine.embedSentence(tokenized.tokens, 9999);
+        const queryCoords = this.pcaEngine.transformQuery(queryVec);
+        const nearest = this.embeddingEngine.findNearestToQuery(queryVec, this.sentenceData, this.sentenceData.map(s => s.embedding), 3);
+
+        this.currentQuery = {
+          text: queryText,
+          cluster: 'Query Beacon',
+          x: queryCoords.x,
+          y: queryCoords.y,
+          z: queryCoords.z,
+          nearestNeighbors: nearest
+        };
+
+        if (this.visualizer) this.visualizer.setQueryPoint(this.currentQuery);
+        this.renderPlaygroundNearest(nearest);
+        return this.currentQuery;
+      }
+
+      renderPlaygroundNearest(nearest) {
+        this.playgroundNearestList.innerHTML = '';
+        nearest.forEach((item, idx) => {
+          const card = document.createElement('div');
+          card.className = 'neighbor-card';
+          card.style.padding = '10px 12px';
+
+          card.innerHTML = `
+            <div style="display:flex; align-items:flex-start; gap:8px; flex:1;">
+              <div class="rank-badge" style="width:24px; height:24px; font-size:11px;">#${idx + 1}</div>
+              <div style="display:flex; flex-direction:column; gap:2px; flex:1;">
+                <div style="font-size:12px; font-weight:600; color:#FFF; font-family:var(--font-mono); line-height:1.4;">
+                  "${this.escapeHtml(item.sentence.text)}"
+                </div>
+                <div style="font-size:10px; color:var(--primary); font-family:var(--font-mono);">
+                  Cluster: ${item.sentence.cluster}
+                </div>
+              </div>
+            </div>
+
+            <div class="sim-score-meter">
+              <div class="sim-percentage" style="font-size:15px;">${(item.similarity * 100).toFixed(1)}%</div>
+              <div class="sim-bar-bg" style="width:60px;">
+                <div class="sim-bar-fill" style="width:${Math.max(0, item.similarity * 100)}%;"></div>
+              </div>
+            </div>
+          `;
+          this.playgroundNearestList.appendChild(card);
+        });
+      }
+
+      async runSelfTestSuite() {
+        this.btnRunSelftest.disabled = true;
+        this.btnRunSelftest.textContent = 'Running Diagnostics...';
+
+        const suite = new SelfTestSuite();
+        const report = await suite.runAll();
+
+        this.testStatTotal.textContent = report.totalCount;
+        this.testStatPassed.textContent = report.passedCount;
+        this.testStatFailed.textContent = report.failedCount;
+        this.testStatTime.textContent = `${report.totalDurationMs} ms`;
+
+        this.testResultsList.innerHTML = '';
+        report.results.forEach(res => {
+          const row = document.createElement('div');
+          row.className = 'test-item-row';
+          const statusPill = res.passed
+            ? `<span class="test-status-pill passed">✓ PASS (${res.durationMs}ms)</span>`
+            : `<span class="test-status-pill failed">✕ FAIL: ${this.escapeHtml(res.error)}</span>`;
+
+          row.innerHTML = `
+            <div class="test-name">
+              <span style="color:${res.passed ? 'var(--success)' : 'var(--danger)'};">●</span>
+              <span>${this.escapeHtml(res.name)}</span>
+            </div>
+            <div>${statusPill}</div>
+          `;
+          this.testResultsList.appendChild(row);
+        });
+
+        this.btnRunSelftest.disabled = false;
+        this.btnRunSelftest.textContent = 'Run All Self-Tests';
+      }
+
+      runFullPipeline() {
+        this.corpusTextarea.value = this.corpusSentences.join('\n\n');
+        this.trainTokenizer(80);
+        this.executePlaygroundQuery('transformers compute neural attention mechanisms');
+        this.runSelfTestSuite();
+      }
+
+      escapeHtml(str) {
+        if (!str) return '';
+        return String(str)
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#39;');
+      }
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      window.app = new SNDApp();
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,96 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+body {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  background-color: #070a12;
+  color: #f1f5f9;
+  overflow-x: hidden;
+}
+
+/* Glassmorphism Card Style */
+.glass-panel {
+  background: rgba(16, 24, 45, 0.65);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 12px 30px 0 rgba(0, 0, 0, 0.37);
+}
+
+.glass-panel-glow-blue {
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  box-shadow: 0 0 25px -5px rgba(59, 130, 246, 0.25);
+}
+
+.glass-panel-glow-green {
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  box-shadow: 0 0 25px -5px rgba(16, 185, 129, 0.25);
+}
+
+.glass-input {
+  background: rgba(12, 18, 34, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  transition: all 0.2s ease-in-out;
+}
+
+.glass-input:focus {
+  border-color: rgba(59, 130, 246, 0.7);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+  outline: none;
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+
+::-webkit-scrollbar-track {
+  background: #0c1222;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #223055;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #3b82f6;
+}
+
+/* Token chip colors */
+.chip-0 { background: rgba(59, 130, 246, 0.18); border-color: rgba(59, 130, 246, 0.4); color: #93c5fd; }
+.chip-1 { background: rgba(168, 85, 247, 0.18); border-color: rgba(168, 85, 247, 0.4); color: #d8b4fe; }
+.chip-2 { background: rgba(6, 182, 212, 0.18); border-color: rgba(6, 182, 212, 0.4); color: #67e8f9; }
+.chip-3 { background: rgba(16, 185, 129, 0.18); border-color: rgba(16, 185, 129, 0.4); color: #6ee7b7; }
+.chip-4 { background: rgba(234, 179, 8, 0.18); border-color: rgba(234, 179, 8, 0.4); color: #fde047; }
+.chip-5 { background: rgba(249, 115, 22, 0.18); border-color: rgba(249, 115, 22, 0.4); color: #fdba74; }
+.chip-6 { background: rgba(236, 72, 153, 0.18); border-color: rgba(236, 72, 153, 0.4); color: #f9a8d4; }
+.chip-7 { background: rgba(99, 102, 241, 0.18); border-color: rgba(99, 102, 241, 0.4); color: #a5b4fc; }
+
+.chip-special {
+  background: rgba(100, 116, 139, 0.25);
+  border-color: rgba(148, 163, 184, 0.4);
+  color: #cbd5e1;
+  font-style: italic;
+}
+
+.chip-match {
+  background: rgba(239, 68, 68, 0.35) !important;
+  border-color: #ef4444 !important;
+  color: #ffffff !important;
+  font-weight: 700 !important;
+  box-shadow: 0 0 12px rgba(239, 68, 68, 0.6) !important;
+  animation: pulseGlow 1.5s infinite;
+}
+
+/* Subtle background grid */
+.bg-grid-pattern {
+  background-image: radial-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+  background-size: 28px 28px;
+}
